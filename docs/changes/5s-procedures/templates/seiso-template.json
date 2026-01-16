@@ -1,0 +1,54 @@
+{
+  "procedure": {
+    "type": "seiso",
+    "name": "Очищення системи",
+    "description": "Регулярне прибирання та очищення системи від тимчасових файлів, логів, кешу",
+    "category": "maintenance"
+  },
+  "changes": {
+    "type": "optimize",
+    "what": "Тимчасові файли, логи, кеш, системні залишки",
+    "why": "Звільнення дискового простору, покращення продуктивності, запобігання переповненню",
+    "how": "Автоматизовані скрипти очищення, ротація логів, очищення кешу"
+  },
+  "impact": {
+    "scope": "system",
+    "severity": "low",
+    "affected_components": [],
+    "performance_metrics": {
+      "disk_impact": -20,
+      "memory_impact": -5,
+      "cpu_impact": 0
+    },
+    "estimated_time_saved": 10,
+    "estimated_cost_impact": -10
+  },
+  "technical": {
+    "files_modified": [],
+    "commands_executed": [
+      "journalctl --vacuum-time=30d",
+      "apt clean && apt autoclean",
+      "find /tmp -type f -atime +7 -delete",
+      "docker system prune -f"
+    ],
+    "services_affected": [],
+    "backup_location": "/backup/seiso",
+    "rollback_procedure": "Зазвичай не потрібен для очищення тимчасових файлів",
+    "validation_steps": [
+      "Перевірити доступний дисковий простір",
+      "Перевірити, що не видалені важливі файли",
+      "Перевірити працездатність системи"
+    ]
+  },
+  "human_resources": {
+    "executor": "",
+    "skill_level_required": "basic",
+    "time_invested": 15
+  },
+  "status": {
+    "current": "completed",
+    "completion_percentage": 100,
+    "maintenance_frequency": "weekly"
+  },
+  "tags": ["cleanup", "maintenance", "seiso", "system-hygiene"]
+}

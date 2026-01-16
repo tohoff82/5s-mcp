@@ -1,0 +1,53 @@
+{
+  "procedure": {
+    "type": "seiton",
+    "name": "Організація файлової структури",
+    "description": "Систематизація та організація компонентів системи",
+    "category": "system"
+  },
+  "changes": {
+    "type": "optimize",
+    "what": "Структура файлів, каталогів, конфігурацій",
+    "why": "Покращення навігації, легший доступ до компонентів, стандартизація",
+    "how": "Реструктуризація каталогів, стандартизація іменування, створення логічної ієрархії"
+  },
+  "impact": {
+    "scope": "service",
+    "severity": "low",
+    "affected_components": [],
+    "performance_metrics": {
+      "disk_impact": 0,
+      "memory_impact": 0,
+      "cpu_impact": 0
+    },
+    "estimated_time_saved": 20,
+    "estimated_cost_impact": 0
+  },
+  "technical": {
+    "files_modified": [],
+    "commands_executed": [
+      "mkdir -p /organized/structure",
+      "mv /old/path/* /new/organized/path/",
+      "ln -s /new/path /old/path"
+    ],
+    "services_affected": [],
+    "backup_location": "/backup/seiton",
+    "rollback_procedure": "Відновити стару структуру з резервної копії",
+    "validation_steps": [
+      "Перевірити доступність всіх файлів",
+      "Перевірити працездатність символічних посилань",
+      "Перевірити права доступу"
+    ]
+  },
+  "human_resources": {
+    "executor": "",
+    "skill_level_required": "basic",
+    "time_invested": 45
+  },
+  "status": {
+    "current": "completed",
+    "completion_percentage": 100,
+    "maintenance_frequency": "quarterly"
+  },
+  "tags": ["organization", "structure", "seiton", "file-management"]
+}

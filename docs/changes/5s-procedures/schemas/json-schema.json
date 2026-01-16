@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/5s-changelog.schema.json",
+  "title": "5S Procedures Changelog Entry",
+  "description": "Schema for 5S methodology procedure changes",
+  "type": "object",
+  "required": [
+    "id",
+    "timestamp",
+    "quarter",
+    "procedure",
+    "changes",
+    "impact",
+    "status",
+    "human_resources"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}-[0-9]{6}-[A-Z0-9]{3}$",
+      "description": "Unique ID in format YYYYMMDD-HHMMSS-XXX"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of creation"
+    },
+    "quarter": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-Q[1-4]$",
+      "description": "Quarter in format YYYY-QX"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0",
+      "description": "Schema version for migrations"
+    },
+    "procedure": {
+      "type": "object",
+      "required": ["type", "name", "category"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["seiri", "seiton", "seiso", "seiketsu", "shitsuke"],
+          "description": "5S procedure type"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200,
+          "description": "Procedure name"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Procedure description"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["system", "security", "performance", "maintenance", "documentation"],
+          "description": "Procedure category"
+        }
+      }
+    },
+    "changes": {
+      "type": "object",
+      "required": ["type", "what", "why"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["add", "update", "remove", "optimize", "fix", "refactor"],
+          "description": "Type of change"
+        },
+        "what": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500,
+          "description": "What was changed"
+        },
+        "why": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000,
+          "description": "Why it was changed"
+        },
+        "how": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "How it was changed (technical details)"
+        },
+        "before": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "State before changes"
+        },
+        "after": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "State after changes"
+        }
+      }
+    },
+    "impact": {
+      "type": "object",
+      "required": ["scope", "severity"],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": ["local", "service", "system", "global"],
+          "description": "Impact scope"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Impact severity"
+        },
+        "affected_components": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of affected components"
+        },
+        "performance_metrics": {
+          "type": "object",
+          "properties": {
+            "cpu_impact": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100,
+              "description": "CPU impact percentage"
+            },
+            "memory_impact": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100,
+              "description": "Memory impact percentage"
+            },
+            "disk_impact": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100,
+              "description": "Disk impact percentage"
+            },
+            "network_impact": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100,
+              "description": "Network impact percentage"
+            }
+          }
+        },
+        "estimated_time_saved": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated time saved per day in minutes"
+        },
+        "estimated_cost_impact": {
+          "type": "number",
+          "description": "Estimated cost impact per month in USD"
+        }
+      }
+    },
+    "technical": {
+      "type": "object",
+      "properties": {
+        "files_modified": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of modified files"
+        },
+        "commands_executed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of executed commands"
+        },
+        "services_affected": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of affected services"
+        },
+        "backup_location": {
+          "type": "string",
+          "description": "Backup location path"
+        },
+        "rollback_procedure": {
+          "type": "string",
+          "description": "Rollback procedure description"
+        },
+        "validation_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Validation steps"
+        }
+      }
+    },
+    "human_resources": {
+      "type": "object",
+      "required": ["executor"],
+      "properties": {
+        "executor": {
+          "type": "string",
+          "minLength": 2,
+          "description": "Who executed the change"
+        },
+        "reviewer": {
+          "type": "string",
+          "description": "Who reviewed the change"
+        },
+        "approver": {
+          "type": "string",
+          "description": "Who approved the change"
+        },
+        "time_invested": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Time invested in minutes"
+        },
+        "skill_level_required": {
+          "type": "string",
+          "enum": ["basic", "intermediate", "advanced", "expert"],
+          "description": "Required skill level"
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "required": ["current"],
+      "properties": {
+        "current": {
+          "type": "string",
+          "enum": ["planned", "in_progress", "completed", "failed", "rolled_back"],
+          "description": "Current status"
+        },
+        "completion_percentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Completion percentage"
+        },
+        "milestones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "status"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pending", "completed", "failed"]
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "next_review_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Next review date"
+        },
+        "maintenance_frequency": {
+          "type": "string",
+          "enum": ["daily", "weekly", "monthly", "quarterly", "annually"],
+          "description": "Maintenance frequency"
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+$"
+      },
+      "uniqueItems": true,
+      "description": "Tags for search and grouping"
+    }
+  }
+}

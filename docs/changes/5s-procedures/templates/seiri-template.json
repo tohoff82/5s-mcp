@@ -1,0 +1,53 @@
+{
+  "procedure": {
+    "type": "seiri",
+    "name": "Видалення непотрібних файлів/процесів",
+    "description": "Сортування та видалення непотрібних компонентів системи",
+    "category": "system"
+  },
+  "changes": {
+    "type": "remove",
+    "what": "Непотрібні файли, процеси, або компоненти",
+    "why": "Звільнення ресурсів, покращення продуктивності, зменшення складності",
+    "how": "Аналіз використання ресурсів, ідентифікація непотрібних елементів, безпечне видалення"
+  },
+  "impact": {
+    "scope": "system",
+    "severity": "medium",
+    "affected_components": [],
+    "performance_metrics": {
+      "disk_impact": -10,
+      "memory_impact": -5,
+      "cpu_impact": -2
+    },
+    "estimated_time_saved": 15,
+    "estimated_cost_impact": -20
+  },
+  "technical": {
+    "files_modified": [],
+    "commands_executed": [
+      "find /path -type f -name '*.tmp' -delete",
+      "systemctl disable unused-service",
+      "apt autoremove"
+    ],
+    "services_affected": [],
+    "backup_location": "/backup/seiri",
+    "rollback_procedure": "Відновити з резервної копії",
+    "validation_steps": [
+      "Перевірити, що системa працює стабільно",
+      "Перевірити, що не видалені потрібні файли",
+      "Моніторити використання ресурсів"
+    ]
+  },
+  "human_resources": {
+    "executor": "",
+    "skill_level_required": "intermediate",
+    "time_invested": 30
+  },
+  "status": {
+    "current": "completed",
+    "completion_percentage": 100,
+    "maintenance_frequency": "monthly"
+  },
+  "tags": ["cleanup", "optimization", "seiri", "system-maintenance"]
+}

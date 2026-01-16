@@ -1,0 +1,97 @@
+{
+  "id": "20250115-190245-EX1",
+  "timestamp": "2025-01-15T19:02:45.123Z",
+  "quarter": "2025-Q1",
+  "version": "1.0",
+  "_created": "2025-01-15T19:02:45.123Z",
+  "_updated": "2025-01-15T19:02:45.123Z",
+  
+  "procedure": {
+    "type": "seiso",
+    "name": "Очищення системних логів та тимчасових файлів",
+    "description": "Регулярне очищення застарілих логів, тимчасових файлів та кешу для звільнення дискового простору",
+    "category": "maintenance"
+  },
+  
+  "changes": {
+    "type": "optimize",
+    "what": "Видалені застарілі логи (>30 днів), тимчасові файли, APT кеш",
+    "why": "Звільнення 2.3GB дискового простору, попередження переповнення диска",
+    "how": "Використані команди journalctl --vacuum-time=30d, apt clean, очищення /tmp",
+    "before": "Диск заповнений на 87%, логи займають 3.2GB",
+    "after": "Диск заповнений на 73%, логи займають 0.9GB"
+  },
+  
+  "impact": {
+    "scope": "system",
+    "severity": "medium",
+    "affected_components": ["systemd-journal", "apt", "tmp-filesystem"],
+    "performance_metrics": {
+      "cpu_impact": 0,
+      "memory_impact": 0,
+      "disk_impact": -15,
+      "network_impact": 0
+    },
+    "estimated_time_saved": 5,
+    "estimated_cost_impact": -5
+  },
+  
+  "technical": {
+    "files_modified": [
+      "/var/log/journal/*",
+      "/tmp/*",
+      "/var/cache/apt/*"
+    ],
+    "commands_executed": [
+      "journalctl --vacuum-time=30d",
+      "apt clean && apt autoclean",
+      "find /tmp -type f -atime +7 -delete",
+      "df -h"
+    ],
+    "services_affected": [],
+    "backup_location": "",
+    "rollback_procedure": "Зазвичай не потрібен для очищення тимчасових файлів",
+    "validation_steps": [
+      "Перевірити доступний дисковий простір (df -h)",
+      "Переконатись що система працює стабільно",
+      "Перевірити що логи продовжують записуватися"
+    ]
+  },
+  
+  "human_resources": {
+    "executor": "admin",
+    "reviewer": "",
+    "approver": "",
+    "time_invested": 10,
+    "skill_level_required": "basic"
+  },
+  
+  "status": {
+    "current": "completed",
+    "completion_percentage": 100,
+    "milestones": [
+      {
+        "name": "Очищення журналів",
+        "status": "completed",
+        "timestamp": "2025-01-15T19:00:00.000Z",
+        "notes": "Звільнено 2.3GB"
+      },
+      {
+        "name": "Очищення APT кешу", 
+        "status": "completed",
+        "timestamp": "2025-01-15T19:01:00.000Z",
+        "notes": "Звільнено 156MB"
+      },
+      {
+        "name": "Очищення /tmp",
+        "status": "completed", 
+        "timestamp": "2025-01-15T19:02:00.000Z",
+        "notes": "Видалено 23 старі файли"
+      }
+    ],
+    "next_review_date": "2025-02-15",
+    "maintenance_frequency": "weekly"
+  },
+  
+  "tags": ["cleanup", "maintenance", "disk-space", "logs", "seiso"]
+}
