@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Generated data (5S reports are auto-generated)
+docs/changes/5s-procedures/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

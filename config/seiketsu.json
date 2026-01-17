@@ -1,0 +1,25 @@
+{
+  "standards": {
+    "filePermissions": {
+      "configs": "644",
+      "executables": "755",
+      "logs": "644",
+      "secrets": "600"
+    },
+    "directoryStructure": {
+      "enforceStandard": true,
+      "createMissing": true,
+      "reportDeviations": true
+    },
+    "namingConventions": {
+      "enforceKebabCase": false,
+      "allowUnderscore": true,
+      "maxLength": 255
+    }
+  },
+  "compliance": {
+    "checkInterval": 24,
+    "reportFormat": "json",
+    "autoFix": false
+  }
+}

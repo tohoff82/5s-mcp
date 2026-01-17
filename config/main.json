@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "environment": "production",
+  "debug": false,
+  "modules": [
+    "seiri",
+    "seiton",
+    "seiso",
+    "seiketsu",
+    "shitsuke"
+  ],
+  "paths": {
+    "logs": "/var/log/5s",
+    "reports": "/tmp/5s-reports",
+    "backup": "/backup/5s",
+    "temp": "/tmp/5s-work"
+  },
+  "scheduling": {
+    "enabled": true,
+    "timezone": "UTC",
+    "concurrentJobs": 2
+  }
+}

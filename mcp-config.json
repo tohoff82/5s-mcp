@@ -1,0 +1,66 @@
+{
+  "mcpServers": {
+    "5s-methodology": {
+      "command": "node",
+      "args": [
+        "/root/ui-agent-5s/src/mcp-server/index.js"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "DEBUG": "false"
+      }
+    }
+  },
+  "version": "1.0.0",
+  "description": "UI-Agent 5S Management System MCP Server Configuration",
+  "tools": [
+    {
+      "name": "5s-seiri",
+      "description": "Seiri (整理) - Сортування та видалення непотрібного",
+      "category": "system-maintenance"
+    },
+    {
+      "name": "5s-seiton", 
+      "description": "Seiton (整頓) - Систематизація та організація",
+      "category": "file-organization"
+    },
+    {
+      "name": "5s-seiso",
+      "description": "Seiso (清掃) - Очищення та підтримка чистоти",
+      "category": "system-cleanup"
+    },
+    {
+      "name": "5s-seiketsu",
+      "description": "Seiketsu (清潔) - Стандартизація процедур",
+      "category": "standardization"
+    },
+    {
+      "name": "5s-shitsuke",
+      "description": "Shitsuke (躾) - Дисципліна та дотримання стандартів",
+      "category": "monitoring-audit"
+    }
+  ],
+  "capabilities": [
+    "file-management",
+    "system-monitoring", 
+    "automated-cleanup",
+    "compliance-checking",
+    "performance-audit",
+    "scheduled-tasks"
+  ],
+  "security": {
+    "allowSystemCommands": true,
+    "allowFileModification": true,
+    "restrictedPaths": [
+      "/boot",
+      "/proc",
+      "/sys"
+    ]
+  },
+  "logging": {
+    "level": "info",
+    "file": "/var/log/5s-mcp-server.log",
+    "maxSize": "10MB",
+    "maxFiles": 5
+  }
+}

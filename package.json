@@ -1,0 +1,36 @@
+{
+  "name": "ui-agent-5s-mcp-server",
+  "version": "1.0.0",
+  "description": "5S Methodology MCP Server for Server Management",
+  "main": "src/mcp-server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/mcp-server/index.js",
+    "dev": "node --watch src/mcp-server/index.js",
+    "test": "node src/mcp-server/test-client.js"
+  },
+  "keywords": [
+    "5S",
+    "server-management", 
+    "mcp",
+    "model-context-protocol",
+    "lean",
+    "kaizen"
+  ],
+  "author": "UI-Agent System",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "util": "^0.12.5",
+    "child_process": "^1.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "file:///root/ui-agent-5s"
+  }
+}

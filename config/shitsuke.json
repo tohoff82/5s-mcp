@@ -1,0 +1,18 @@
+{
+  "audit": {
+    "schedule": "0 23 * * 0",
+    "retention": 52,
+    "reportEmail": null,
+    "autoRemediation": false
+  },
+  "metrics": {
+    "trackTrends": true,
+    "alertThreshold": 70,
+    "historicalDepth": 12
+  },
+  "enforcement": {
+    "strictMode": false,
+    "autoCorrect": false,
+    "escalationRules": []
+  }
+}

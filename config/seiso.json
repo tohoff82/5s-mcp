@@ -1,0 +1,36 @@
+{
+  "cleanup": {
+    "levels": {
+      "light": {
+        "targets": [
+          "temp",
+          "cache"
+        ],
+        "aggressiveness": "low"
+      },
+      "standard": {
+        "targets": [
+          "temp",
+          "cache",
+          "logs"
+        ],
+        "aggressiveness": "medium"
+      },
+      "deep": {
+        "targets": [
+          "temp",
+          "cache",
+          "logs",
+          "old-packages"
+        ],
+        "aggressiveness": "high"
+      }
+    }
+  },
+  "monitoring": {
+    "diskThreshold": 80,
+    "memoryThreshold": 85,
+    "loadThreshold": 2,
+    "alertEmail": null
+  }
+}

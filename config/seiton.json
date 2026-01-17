@@ -1,0 +1,26 @@
+{
+  "organization": {
+    "standardDirs": [
+      "/etc",
+      "/var",
+      "/opt",
+      "/home",
+      "/usr/local",
+      "/srv",
+      "/media"
+    ],
+    "indexPaths": [
+      "/etc",
+      "/opt",
+      "/usr/local/etc"
+    ],
+    "archivePath": "/archive",
+    "tempPath": "/tmp/seiton-work"
+  },
+  "rules": {
+    "categorizeByType": true,
+    "categorizeByDate": true,
+    "createIndex": true,
+    "maintainStructure": true
+  }
+}

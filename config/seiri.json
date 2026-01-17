@@ -1,0 +1,41 @@
+{
+  "categories": {
+    "temp": {
+      "paths": [
+        "/tmp",
+        "/var/tmp"
+      ],
+      "maxAge": 7,
+      "exclude": [
+        "*.sock",
+        "*.pid"
+      ]
+    },
+    "logs": {
+      "paths": [
+        "/var/log"
+      ],
+      "maxAge": 30,
+      "maxSize": "100M",
+      "exclude": [
+        "audit.log",
+        "auth.log"
+      ]
+    },
+    "cache": {
+      "paths": [
+        "/var/cache",
+        "~/.cache"
+      ],
+      "maxAge": 14,
+      "exclude": [
+        "package-cache"
+      ]
+    }
+  },
+  "safety": {
+    "dryRun": true,
+    "backupBeforeDelete": true,
+    "confirmDeletion": true
+  }
+}
