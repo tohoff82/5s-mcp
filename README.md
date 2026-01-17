@@ -1,39 +1,235 @@
-# Server 5S Management System
+# 5S MCP Server
 
-Система 5S для сервера htz-legistrator (138.201.190.221) за методологією Хіроюкі Хірано, адаптована для LLM-агента як відповідального за підтримку.
+[![MCP](https://img.shields.io/badge/MCP-compatible-blue)](https://modelcontextprotocol.io)
+[![Node.js](https://img.shields.io/badge/Node.js-≥18.0.0-green)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Структура репозиторію
+**5S Methodology MCP Server** — реалізація Lean-методології 5S для управління серверами через Model Context Protocol (MCP).
+
+## 🎯 Що таке 5S?
+
+5S — це японська методологія організації робочого місця, розроблена Toyota. Кожна "S" представляє крок:
+
+| Крок | Японською | Переклад | Опис |
+|------|-----------|----------|------|
+| **1S** | 整理 (Seiri) | Сортування | Визначити необхідне та непотрібне |
+| **2S** | 整頓 (Seiton) | Систематизація | Організувати все за логічною системою |
+| **3S** | 清掃 (Seiso) | Чистота | Очистити та підтримувати чистоту |
+| **4S** | 清潔 (Seiketsu) | Стандартизація | Створити стандарти та процедури |
+| **5S** | 躾 (Shitsuke) | Дисципліна | Підтримувати та вдосконалювати систему |
+
+## ✨ Можливості
+
+- 🔍 **Seiri (Sort)** — аналіз файлів, процесів, пакетів та логів
+- 📁 **Seiton (Set in Order)** — організація конфігурацій, логів, скриптів
+- 🧹 **Seiso (Shine)** — очищення кешу, логів, тимчасових файлів
+- 📋 **Seiketsu (Standardize)** — перевірка стандартів безпеки та продуктивності
+- ✅ **Shitsuke (Sustain)** — щотижневі аудити та автоматизація
+
+## 📦 Встановлення
+
+### Як standalone сервер
+
+```bash
+git clone https://github.com/tohoff82/5s-mcp.git
+cd 5s-mcp
+npm install
+npm start
+```
+
+### Як залежність
+
+```bash
+npm install github:tohoff82/5s-mcp
+```
+
+## ⚙️ Конфігурація
+
+### Claude Desktop
+
+Додайте до `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "5s": {
+      "command": "node",
+      "args": ["/path/to/5s-mcp/src/mcp-server/index.js"]
+    }
+  }
+}
+```
+
+### VS Code (Copilot)
+
+Додайте до `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "5s": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/path/to/5s-mcp/src/mcp-server/index.js"]
+    }
+  }
+}
+```
+
+## 🛠️ API Reference
+
+### `seiri_sort_analyze`
+
+Аналіз та сортування для визначення необхідного і непотрібного.
+
+```json
+{
+  "target": "files|processes|packages|logs|all",
+  "path": "/root",
+  "criteria": {
+    "age_days": 30,
+    "size_mb": 10,
+    "include_hidden": false
+  }
+}
+```
+
+### `seiton_organize_system`
+
+Організація та систематизація компонентів системи.
+
+```json
+{
+  "target": "configs|logs|scripts|services|all",
+  "action": "analyze|organize",
+  "options": {
+    "create_links": true,
+    "backup_first": true
+  }
+}
+```
+
+### `seiso_clean_system`
+
+Очищення системи від непотрібних файлів.
+
+```json
+{
+  "target": "cache|logs|temp|packages|journal|all",
+  "action": "analyze|clean",
+  "options": {
+    "older_than_days": 7,
+    "dry_run": true,
+    "keep_last_n": 5
+  }
+}
+```
+
+### `seiketsu_standardize_procedures`
+
+Перевірка відповідності стандартам.
+
+```json
+{
+  "category": "security|performance|backup|all",
+  "action": "check|report",
+  "options": {
+    "fix_issues": false,
+    "severity_threshold": "warning"
+  }
+}
+```
+
+### `5s-shitsuke`
+
+Аудит дотримання 5S та автоматизація.
+
+```json
+{
+  "action": "weekly_audit|metrics|health_check|automation_status",
+  "options": {
+    "include_recommendations": true,
+    "compare_with_previous": true
+  }
+}
+```
+
+## 📊 Приклад виводу
+
+```json
+{
+  "timestamp": "2026-01-17T12:00:00Z",
+  "target": "all",
+  "analysis": {
+    "files": {
+      "total_scanned": 1250,
+      "large_files": 12,
+      "old_files": 45,
+      "potential_cleanup_mb": 850
+    },
+    "processes": {
+      "total": 89,
+      "zombie": 0,
+      "high_memory": 3
+    }
+  },
+  "recommendations": [
+    "Remove 45 files older than 30 days",
+    "Clear 850MB of large log files"
+  ]
+}
+```
+
+## 🏗️ Архітектура
 
 ```
-/root/ui-agent-5s/
-├── README.md                    # Головний опис системи
-├── 1-seiri/                     # 整理 - Сортування/Відбір 
-├── 2-seiton/                    # 整頓 - Систематизація/Порядок
-├── 3-seiso/                     # 清掃 - Прибирання/Чистота
-├── 4-seiketsu/                  # 清潔 - Стандартизація
-├── 5-shitsuke/                  # 躾 - Самодисципліна/Дотримання
-└── weekly-checklist.md          # Тижневий чеклист для агента
+5s-mcp/
+├── src/
+│   └── mcp-server/
+│       ├── index.js          # Entry point
+│       ├── server.js         # MCP Server implementation
+│       └── tools/
+│           ├── seiri.js      # 整理 - Sort/Identify
+│           ├── seiton.js     # 整頓 - Set in Order
+│           ├── seiso.js      # 清掃 - Shine/Clean
+│           ├── seiketsu.js   # 清潔 - Standardize
+│           └── shitsuke.js   # 躾 - Sustain
+├── config/                   # Configuration files
+├── docs/                     # Documentation
+└── 1-5-shitsuke/            # Methodology procedures
 ```
 
-## Концепція
+## 🔒 Безпека
 
-Сервер = Робоче місце LLM-агента
-- Кожна "S" = окрема директорія з процедурами
-- Файли = покрокові LLM-специфікації з guided reasoning
-- Виконання: щотижня агентом автономно
+- Всі деструктивні операції мають `dry_run` режим за замовчуванням
+- Автоматичне створення бекапів перед змінами
+- Обмеження на критичні системні шляхи
+- Логування всіх операцій
 
-## Принципи виконання
+## 📚 Документація
 
-1. **Безпека перш за все** - завжди backup перед змінами
-2. **Перевірка стану** - аналіз перед діями
-3. **Документування** - логування всіх операцій
-4. **Поступовість** - крок за кроком з перевірками
-5. **Консистентність** - однакові процедури щотижня
+- [Architecture](docs/README.md)
+- [5S Methodology Guide](docs/maintenance/5s-methodology/README.md)
+- [Security Procedures](docs/security/current-state.md)
 
-## Архітектура сервера
+## 🤝 Contributing
 
-- **OS**: Ubuntu Server
-- **Core Services**: 6x UI-Agent services, MongoDB, RabbitMQ, Caddy
-- **Security**: fail2ban, UFW, SSH monitoring, attacker detection
-- **Resources**: 38GB disk (13% used), 3.7GB RAM
-- **Network**: Hetzner Cloud, публічний IP
+1. Fork репозиторій
+2. Створіть feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit зміни (`git commit -m 'Add amazing feature'`)
+4. Push branch (`git push origin feature/amazing-feature`)
+5. Відкрийте Pull Request
+
+## 📄 Ліцензія
+
+MIT License - див. [LICENSE](LICENSE)
+
+## 🙏 Подяки
+
+- [Hiroyuki Hirano](https://en.wikipedia.org/wiki/5S_(methodology)) — автор методології 5S
+- [Model Context Protocol](https://modelcontextprotocol.io) — стандарт MCP
+- [Anthropic](https://anthropic.com) — MCP SDK
+
+---
+
+**Made with 整理整頓清掃清潔躾 by [tohoff82](https://github.com/tohoff82)**

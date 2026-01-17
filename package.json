@@ -1,7 +1,7 @@
 {
-  "name": "ui-agent-5s-mcp-server",
+  "name": "5s-mcp",
   "version": "1.0.0",
-  "description": "5S Methodology MCP Server for Server Management",
+  "description": "5S Methodology MCP Server - Lean manufacturing principles for server management",
   "main": "src/mcp-server/index.js",
   "type": "module",
   "scripts": {
@@ -11,26 +11,33 @@
   },
   "keywords": [
     "5S",
-    "server-management", 
     "mcp",
     "model-context-protocol",
+    "server-management",
     "lean",
-    "kaizen"
+    "kaizen",
+    "seiri",
+    "seiton",
+    "seiso",
+    "seiketsu",
+    "shitsuke",
+    "devops",
+    "automation"
   ],
-  "author": "UI-Agent System",
+  "author": "tohoff82",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tohoff82/5s-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tohoff82/5s-mcp/issues"
+  },
+  "homepage": "https://github.com/tohoff82/5s-mcp#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.4.0",
-    "fs": "^0.0.1-security",
-    "path": "^0.12.7",
-    "util": "^0.12.5",
-    "child_process": "^1.0.2"
+    "@modelcontextprotocol/sdk": "^0.4.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "file:///root/ui-agent-5s"
   }
 }
