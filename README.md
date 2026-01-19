@@ -245,7 +245,7 @@ This server is part of the **UI-Agent MCP ecosystem** deployed on `138.201.190.2
 ├── 5s-mcp/                    # 5S Methodology (Lean/Kaizen)
 ├── memory-mcp/                # System Memory & Self-awareness
 ├── rabbitmq-mcp/              # RabbitMQ Management
-└── ubuntu-mcp/                # Linux System Tools (305 tools)
+└── ubuntu-mcp/                # Linux System Tools (308 tools)
 
 /root/
 └── ui-agent/                  # Main Application
