@@ -38,3 +38,37 @@
 
 ---
 *Автоматично оновлюється агентом з дотриманням принципів самобезпеки*
+---
+
+## 🧠 Integration with Memory-MCP
+
+This server is tracked by [memory-mcp](/opt/memory-mcp) ecosystem knowledge base.
+
+### How Memory Knows About Us
+
+```json
+// /opt/memory-mcp/data/repos.json
+{
+  "name": "5s-mcp",
+  "path": "/opt/5s-mcp",
+  "tools": 5,
+  "plannedExtensions": ["kaizen", "gemba", "poka-yoke", "muda"]
+}
+```
+
+### Reporting Issues to Memory
+
+If you find tension/problem related to 5S:
+```
+skill_memory action=register_tension 
+  title="5S issue description"
+  description="Details..."
+  context="5s-mcp"
+```
+
+### Architecture Decision Records
+
+5S-related decisions are tracked in memory:
+- **D-001**: Skills як MCP Proxy pattern (adopted)
+- See: `/opt/memory-mcp/data/decisions.json`
+
