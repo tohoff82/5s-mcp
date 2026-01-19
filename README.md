@@ -233,3 +233,55 @@ MIT License - див. [LICENSE](LICENSE)
 ---
 
 **Made with 整理整頓清掃清潔躾 by [tohoff82](https://github.com/tohoff82)**
+
+## 🏗️ Deployment Architecture
+
+This server is part of the **UI-Agent MCP ecosystem** deployed on `138.201.190.221`.
+
+### Directory Structure
+
+```
+/opt/                          # Standalone MCP Servers (production)
+├── 5s-mcp/                    # 5S Methodology (Lean/Kaizen)
+├── memory-mcp/                # System Memory & Self-awareness
+├── rabbitmq-mcp/              # RabbitMQ Management
+└── ubuntu-mcp/                # Linux System Tools (305 tools)
+
+/root/
+└── ui-agent/                  # Main Application
+    ├── services/              # Microservices
+    │   ├── telegram-gateway/  # Telegram bot interface
+    │   ├── claude-service/    # AI orchestration
+    │   ├── tools-executor/    # Tool execution engine
+    │   └── claude-router-mcp/ # Meta-tool routing
+    └── packages/              # Skills (MCP proxies)
+        ├── skills-5s/         # → /opt/5s-mcp
+        ├── skills-memory/     # → /opt/memory-mcp
+        ├── skills-rabbitmq/   # → /opt/rabbitmq-mcp
+        └── skills-rebuild/    # Local build tools
+```
+
+### Integration Flow
+
+```
+Telegram User
+    ↓
+ui-agent/services/telegram-gateway
+    ↓ RabbitMQ
+ui-agent/services/claude-service
+    ↓ skill_* meta-tools
+ui-agent/services/tools-executor
+    ↓ MCP Protocol
+/opt/*-mcp servers
+```
+
+### Related Repositories
+
+| Repository | Location | GitHub |
+|------------|----------|--------|
+| ui-agent | /root/ui-agent | github.com/tohoff82/ui-agent |
+| 5s-mcp | /opt/5s-mcp | github.com/tohoff82/5s-mcp |
+| memory-mcp | /opt/memory-mcp | github.com/tohoff82/memory-mcp |
+| rabbitmq-mcp | /opt/rabbitmq-mcp | github.com/tohoff82/rabbitMQ-mcp |
+| ubuntu-mcp | /opt/ubuntu-mcp | github.com/tohoff82/ubuntu-mcp |
+
