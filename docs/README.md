@@ -72,3 +72,20 @@ skill_memory action=register_tension
 - **D-001**: Skills як MCP Proxy pattern (adopted)
 - See: `/opt/memory-mcp/data/decisions.json`
 
+
+---
+
+## 📋 Cross-Repository Sync
+
+**Last sync:** 2026-01-21
+
+Related repos:
+- [ui-agent](/root/ui-agent) - Main orchestration
+- [memory-mcp](/opt/memory-mcp) - Memory/context system
+- [rabbitmq-mcp](/opt/rabbitmq-mcp) - Message queue tools
+- [ubuntu-mcp](/opt/ubuntu-mcp) - System administration
+- [5s-mcp](/opt/5s-mcp) - 5S methodology tools
+
+**Recent changes affecting this repo:**
+- 2026-01-21: memory-mcp v1.2.0 (predictive context)
+- See: [memory-mcp CHANGELOG](/opt/memory-mcp/docs/CHANGELOG.md)
