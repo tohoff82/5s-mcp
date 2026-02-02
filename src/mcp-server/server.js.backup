@@ -21,7 +21,7 @@ class FiveSMcpServer {
     this.server = new Server(
       {
         name: '5s-methodology-server',
-        version: '1.1.0', // 🎯 Версія оновлена для Memory-Driven Workspace Tree
+        version: '1.0.0',
       },
       {
         capabilities: {
@@ -31,15 +31,7 @@ class FiveSMcpServer {
     );
 
     this.tools = new Map();
-    this.toolOrchestrator = null; // Буде ініціалізовано пізніше з tools-executor
     this.setupEventHandlers();
-    this.registerTools();
-  }
-
-  // 🧠 Додаємо можливість інжектити toolOrchestrator для memory integration
-  setToolOrchestrator(toolOrchestrator) {
-    this.toolOrchestrator = toolOrchestrator;
-    // Перереєструємо tools з orchestrator
     this.registerTools();
   }
 
@@ -93,22 +85,18 @@ class FiveSMcpServer {
   }
 
   registerTools() {
-    // Очищуємо поточні tools для перереєстрації
-    this.tools.clear();
-    
     // Реєструємо всі 5С інструменти
     const tools = [
-      createSeiriTool(),                           // 整理 - Сортування
-      createSeitonTool(this.toolOrchestrator),     // 整頓 - Систематизація + Memory-Driven Workspace Tree 🌸
-      createSeisoTool(),                           // 清掃 - Прибирання
-      createSeiketsuTool(),                        // 清潔 - Стандартизація
-      createShitsukeTool(),                        // 躾 - Дотримання
+      createSeiriTool(),      // 整理 - Сортування
+      createSeitonTool(),     // 整頓 - Систематизація  
+      createSeisoTool(),      // 清掃 - Прибирання
+      createSeiketsuTool(),   // 清潔 - Стандартизація
+      createShitsukeTool(),   // 躾 - Дотримання
     ];
 
     tools.forEach(tool => {
       this.tools.set(tool.name, tool);
-      const memoryIndicator = tool.name === 'seiton_organize_system' ? ' 🌸 (with Memory-Driven Workspace Tree)' : '';
-      console.log(`[5S MCP] Registered tool: ${tool.name}${memoryIndicator}`);
+      console.log(`[5S MCP] Registered tool: ${tool.name}`);
     });
 
     console.log(`[5S MCP] Total tools registered: ${this.tools.size}`);
@@ -118,7 +106,6 @@ class FiveSMcpServer {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     console.log('[5S MCP Server] Started and ready for connections');
-    console.log('🌸 Enhanced with Memory-Driven Intelligent Workspace Tree');
   }
 }
 
