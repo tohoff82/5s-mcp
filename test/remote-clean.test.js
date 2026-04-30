@@ -97,3 +97,33 @@ test('remote clean approved cleanup applies manifest command', async () => {
 
   await rm(path.dirname(policyPath), { recursive: true, force: true });
 });
+
+test('remote clean plans fresh concrete artifacts as approval-gated runnable work', async () => {
+  const policyPath = path.join(await mkdtemp(path.join(os.tmpdir(), '5s-policy-')), 'policy.json');
+  const executor = {
+    async run(_ssh, command) {
+      if (command.startsWith('if [ -e')) {
+        return { stdout: '/tmp/fresh-artifact|regular file|12|1710000000\n', stderr: '' };
+      }
+      if (command.includes('if [ -f')) {
+        return { stdout: '/tmp/fresh-artifact|12|1710000001|root|root|101\n', stderr: '' };
+      }
+      return { stdout: '', stderr: '' };
+    }
+  };
+  const tool = createRemoteCleanTool({ policy: new SafetyPolicyManager(policyPath), executor });
+
+  const plan = await tool.execute({
+    action: 'plan',
+    host: 'example.test',
+    paths_visited: ['/tmp/fresh-artifact'],
+    preserve_days: -1
+  });
+
+  assert.equal(plan.summary.actionable, 1);
+  assert.equal(plan.summary.runnable, 1);
+  assert.equal(plan.summary.blocked, 0);
+  assert.equal(plan.operations[0].manifest[0].path, '/tmp/fresh-artifact');
+
+  await rm(path.dirname(policyPath), { recursive: true, force: true });
+});

@@ -4,7 +4,7 @@ import { SafetyPolicyManager } from '../../safety-policy.js';
 
 const RISKY_PATTERNS = [
   { id: 'direct-delete', regex: /\brm\s+-rf\b|\bfind\b.*-delete\b/, severity: 'high', message: 'Direct destructive cleanup command' },
-  { id: 'secret-literal', regex: /(password|token|api[_-]?key|secret)\s*[:=]\s*["']?[^"'\s]+/i, severity: 'high', message: 'Possible secret literal' },
+  { id: 'secret-literal', regex: /\b(password|token|api[_-]?key|secret)\b\s*(?::|=(?!>))\s*["']?[^"'\s]+/i, severity: 'high', message: 'Possible secret literal' },
   { id: 'hardcoded-root-path', regex: /\/root\/[A-Za-z0-9_.-]+/, severity: 'medium', message: 'Hardcoded root-owned deployment path' },
   { id: 'unsafe-cron', regex: /\bcron\b|\bcrontab\b/i, severity: 'low', message: 'Cron change should go through 5s_cron_manager' }
 ];
