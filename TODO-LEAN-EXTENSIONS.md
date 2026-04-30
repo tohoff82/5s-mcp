@@ -38,9 +38,9 @@ Requirements:
 
 ## Phase 4: Additional Lean Tools
 
-- [ ] `muda_detect`: detect waste in logs, queues, disk, or workflow.
-- [ ] `jidoka_check`: detect conditions that should stop automation.
-- [ ] `andon_status`: produce a status board for health and maintenance readiness.
+- [x] `lean_ops` action `muda_detect`: detect waste in disk/temp/workflow signals.
+- [x] `lean_ops` action `jidoka_check`: detect conditions that should stop automation.
+- [x] `lean_ops` action `andon_status`: produce a status board for health and maintenance readiness.
 
 ## Acceptance Criteria For New Tools
 

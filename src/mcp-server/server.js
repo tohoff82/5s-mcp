@@ -21,6 +21,7 @@ import { createRemoteCleanTool } from './tools/remote-clean.js';
 import { createKaizenTool } from './tools/kaizen.js';
 import { createGembaTool } from './tools/gemba.js';
 import { createPokaYokeTool } from './tools/poka-yoke.js';
+import { createLeanOpsTool } from './tools/lean-ops.js';
 
 class FiveSMcpServer {
   constructor() {
@@ -115,6 +116,7 @@ class FiveSMcpServer {
       createKaizenTool(),                          // Kaizen continuous improvement
       createGembaTool(),                           // Gemba read-only inspection
       createPokaYokeTool(),                        // Poka-Yoke error prevention
+      createLeanOpsTool(),                         // Muda/Jidoka/Andon Lean operations
     ];
 
     tools.forEach(tool => {

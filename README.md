@@ -60,6 +60,7 @@ The server writes operational logs to stderr so stdout remains reserved for MCP 
 | `kaizen_improve` | Continuous improvement suggestions, backlog tracking, and reports. |
 | `gemba_inspect` | Read-only source inspection with policy checks and secret redaction. |
 | `poka_yoke_guard` | Error-prevention scan/suggest/validate with approval-level mapping. |
+| `lean_ops` | Muda/Jidoka/Andon waste, stop-condition, and status operations. |
 
 See [docs/tools.md](docs/tools.md) for schemas and examples.
 

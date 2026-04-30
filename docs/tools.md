@@ -211,3 +211,26 @@ Actions:
 - `scan`: identify risky command, secret, path, or cron patterns.
 - `suggest`: group findings into prevention recommendations.
 - `validate`: pass/fail based on high-risk findings.
+
+## `lean_ops`
+
+Additional Lean operations: waste detection, automation stop checks, and visual status.
+
+```json
+{
+  "action": "andon_status",
+  "target_path": ".",
+  "thresholds": {
+    "disk_warning": 80,
+    "disk_critical": 90,
+    "memory_warning": 85,
+    "memory_critical": 95
+  }
+}
+```
+
+Actions:
+
+- `muda_detect`: detect waste signals and link cleanup to Seiso plans.
+- `jidoka_check`: decide whether automation should stop based on critical thresholds.
+- `andon_status`: return `green`, `yellow`, or `red` status with summary details.
