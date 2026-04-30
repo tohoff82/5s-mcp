@@ -59,6 +59,7 @@ The server writes operational logs to stderr so stdout remains reserved for MCP 
 | `5s_remote_clean` | Evidence-driven remote cleanup after agent sessions. |
 | `kaizen_improve` | Continuous improvement suggestions, backlog tracking, and reports. |
 | `gemba_inspect` | Read-only source inspection with policy checks and secret redaction. |
+| `poka_yoke_guard` | Error-prevention scan/suggest/validate with approval-level mapping. |
 
 See [docs/tools.md](docs/tools.md) for schemas and examples.
 

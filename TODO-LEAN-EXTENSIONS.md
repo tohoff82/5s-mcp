@@ -27,9 +27,9 @@ Requirements:
 
 ## Phase 3: Poka-Yoke
 
-- [ ] `poka_yoke_scan`: identify error-prone config or workflow patterns.
-- [ ] `poka_yoke_suggest`: recommend prevention mechanisms.
-- [ ] `poka_yoke_validate`: verify prevention measures.
+- [x] `poka_yoke_guard` action `scan`: identify error-prone config or workflow patterns.
+- [x] `poka_yoke_guard` action `suggest`: recommend prevention mechanisms.
+- [x] `poka_yoke_guard` action `validate`: verify prevention measures.
 
 Requirements:
 

@@ -193,3 +193,21 @@ Actions:
 - `walk`: list file metadata.
 - `observe`: read disk/process/service state.
 - `context`: gather redacted previews from docs/config/source files.
+
+## `poka_yoke_guard`
+
+Error-prevention scan/suggest/validate. It does not edit files; suggested fixes point to safe tools and approval levels.
+
+```json
+{
+  "action": "scan",
+  "target_path": ".",
+  "max_files": 100
+}
+```
+
+Actions:
+
+- `scan`: identify risky command, secret, path, or cron patterns.
+- `suggest`: group findings into prevention recommendations.
+- `validate`: pass/fail based on high-risk findings.

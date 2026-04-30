@@ -11,6 +11,7 @@ test('MCP server registers production hardening tools', () => {
   assert.ok(tools.includes('5s_remote_clean'));
   assert.ok(tools.includes('kaizen_improve'));
   assert.ok(tools.includes('gemba_inspect'));
+  assert.ok(tools.includes('poka_yoke_guard'));
   assert.ok(tools.includes('seiton_organize_system'));
-  assert.equal(tools.length, 10);
+  assert.equal(tools.length, 11);
 });

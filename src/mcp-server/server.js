@@ -20,6 +20,7 @@ import { createCronManagerTool } from './tools/cron-manager.js';
 import { createRemoteCleanTool } from './tools/remote-clean.js';
 import { createKaizenTool } from './tools/kaizen.js';
 import { createGembaTool } from './tools/gemba.js';
+import { createPokaYokeTool } from './tools/poka-yoke.js';
 
 class FiveSMcpServer {
   constructor() {
@@ -113,6 +114,7 @@ class FiveSMcpServer {
       createRemoteCleanTool(),                     // Remote cleanup mode
       createKaizenTool(),                          // Kaizen continuous improvement
       createGembaTool(),                           // Gemba read-only inspection
+      createPokaYokeTool(),                        // Poka-Yoke error prevention
     ];
 
     tools.forEach(tool => {
