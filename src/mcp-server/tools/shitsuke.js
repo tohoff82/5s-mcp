@@ -6,6 +6,7 @@ import { promisify } from 'util';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { memorySnapshot, systemdStatus } from '../../platform-capabilities.js';
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -22,13 +23,13 @@ const __dirname = path.dirname(__filename);
  * 5. Механізми безперервного покращення
  */
 
-class ShitsukeManager {
-  constructor() {
-    this.auditLogPath = '/var/log/5s-audit.log';
-    this.metricsPath = '/var/log/5s-metrics.json';
-    this.compliancePath = '/var/log/5s-compliance.json';
-    this.reportsPath = '/tmp/5s-reports';
-    this.scheduleTasksPath = '/etc/cron.d/5s-methodology';
+export class ShitsukeManager {
+  constructor(options = {}) {
+    this.auditLogPath = options.auditLogPath || process.env.FIVE_S_AUDIT_LOG || '/tmp/5s-audit.log';
+    this.metricsPath = options.metricsPath || process.env.FIVE_S_METRICS_PATH || '/tmp/5s-metrics.json';
+    this.compliancePath = options.compliancePath || process.env.FIVE_S_COMPLIANCE_PATH || '/tmp/5s-compliance.json';
+    this.reportsPath = options.reportsPath || process.env.FIVE_S_REPORTS_DIR || '/tmp/5s-reports';
+    this.scheduleTasksPath = options.scheduleTasksPath || '/etc/cron.d/5s-methodology';
   }
 
   /**
@@ -244,17 +245,18 @@ class ShitsukeManager {
 
     // Перевірка доступної оперативної пам'яті
     try {
-      const { stdout: memInfo } = await execAsync("free | grep Mem | awk '{printf \"%.1f\", ($3/$2) * 100.0}'");
-      const memUsage = parseFloat(memInfo.trim());
+      const memory = await memorySnapshot();
+      const memUsage = parseMemoryPercent(memory);
       
       results.checks.push({
         name: 'Використання RAM',
-        status: memUsage < 85 ? 'PASS' : 'FAIL',
-        value: `${memUsage.toFixed(1)}%`,
-        threshold: '85%'
+        status: memUsage == null ? 'UNSUPPORTED' : memUsage < 85 ? 'PASS' : 'FAIL',
+        value: memUsage == null ? memory.status : `${memUsage.toFixed(1)}%`,
+        threshold: '85%',
+        note: memUsage == null ? memory.note || memory.reason : undefined
       });
       
-      if (memUsage >= 85) {
+      if (memUsage != null && memUsage >= 85) {
         results.issues.push(`Високе використання RAM: ${memUsage.toFixed(1)}%`);
       }
     } catch (error) {
@@ -286,14 +288,17 @@ class ShitsukeManager {
 
     // Перевірка активних сервісів
     try {
-      const { stdout: services } = await execAsync('systemctl list-units --type=service --state=active | wc -l');
-      const activeServices = parseInt(services.trim()) - 1; // Віднімаємо заголовок
+      const services = await systemdStatus(['list-units', '--type=service', '--state=active', '--no-pager']);
+      const activeServices = services.status === 'ok'
+        ? services.stdout.split('\n').filter(line => line.includes('.service')).length
+        : null;
       
       results.checks.push({
         name: 'Активні сервіси',
-        status: 'INFO',
+        status: services.status === 'unsupported' ? 'UNSUPPORTED' : 'INFO',
         value: activeServices,
-        message: 'Кількість активних системних сервісів'
+        message: 'Кількість активних системних сервісів',
+        note: services.status === 'unsupported' ? services.reason : undefined
       });
     } catch (error) {
       results.checks.push({
@@ -377,7 +382,7 @@ class ShitsukeManager {
               priority: 'MEDIUM',
               module: module.module, 
               action: 'Архівувати або видалити старі логи',
-              command: 'find /var/log -name "*.log*" -mtime +30 -exec gzip {} \\;'
+              command: 'seiso_clean_system action=plan targets=["logs"] preserve_days=30'
             });
           }
           
@@ -386,7 +391,7 @@ class ShitsukeManager {
               priority: 'HIGH',
               module: module.module,
               action: 'Негайно звільнити дисковий простір',
-              command: 'Запустити повне очищення системи'
+              command: 'seiso_clean_system action=plan targets=["all"] preserve_days=7'
             });
           }
           
@@ -480,6 +485,7 @@ class ShitsukeManager {
         history.audits = history.audits.slice(-52);
       }
       
+      await fs.mkdir(path.dirname(this.metricsPath), { recursive: true });
       await fs.writeFile(this.metricsPath, JSON.stringify(history, null, 2));
       
     } catch (error) {
@@ -555,7 +561,8 @@ class ShitsukeManager {
       
     } catch (error) {
       return {
-        error: `Не вдалося завантажити метрики: ${error.message}`,
+        message: 'Недостатньо даних для аналізу',
+        detail: error.message,
         auditsCount: 0
       };
     }
@@ -605,6 +612,8 @@ class ShitsukeManager {
       checks.overall = 'CRITICAL';
     } else if (statuses.includes('WARNING')) {
       checks.overall = 'WARNING';
+    } else if (statuses.includes('UNSUPPORTED')) {
+      checks.overall = 'DEGRADED';
     } else if (statuses.every(s => s === 'HEALTHY')) {
       checks.overall = 'HEALTHY';
     }
@@ -634,8 +643,16 @@ class ShitsukeManager {
 
   async checkMemoryHealth() {
     try {
-      const { stdout } = await execAsync("free | grep Mem | awk '{printf \"%.1f\", ($3/$2) * 100.0}'");
-      const usage = parseFloat(stdout.trim());
+      const memory = await memorySnapshot();
+      const usage = parseMemoryPercent(memory);
+      if (usage == null) {
+        return {
+          usage: null,
+          status: 'UNSUPPORTED',
+          source: memory.source,
+          note: memory.note || memory.reason
+        };
+      }
       
       return {
         usage: `${usage.toFixed(1)}%`,
@@ -654,27 +671,35 @@ class ShitsukeManager {
     const results = [];
     
     for (const service of services) {
-      try {
-        const { stdout } = await execAsync(`systemctl is-active ${service}`);
+      const serviceStatus = await systemdStatus(['is-active', service]);
+      if (serviceStatus.status === 'unsupported') {
         results.push({
           name: service,
-          status: stdout.trim() === 'active' ? 'RUNNING' : 'STOPPED'
+          status: 'UNSUPPORTED',
+          note: serviceStatus.reason
         });
-      } catch (error) {
+      } else if (serviceStatus.status === 'error') {
         results.push({
           name: service,
-          status: 'ERROR',
-          error: error.message
+          status: 'STOPPED',
+          error: serviceStatus.stderr || serviceStatus.error
+        });
+      } else {
+        results.push({
+          name: service,
+          status: serviceStatus.stdout.trim() === 'active' ? 'RUNNING' : 'STOPPED'
         });
       }
     }
     
-    const failedServices = results.filter(s => s.status !== 'RUNNING');
+    const unsupportedServices = results.filter(s => s.status === 'UNSUPPORTED');
+    const failedServices = results.filter(s => !['RUNNING', 'UNSUPPORTED'].includes(s.status));
     
     return {
       services: results,
-      status: failedServices.length === 0 ? 'HEALTHY' : 
-              failedServices.length < services.length ? 'WARNING' : 'CRITICAL',
+      status: failedServices.length === 0
+        ? unsupportedServices.length > 0 ? 'UNSUPPORTED' : 'HEALTHY'
+        : failedServices.length < services.length ? 'WARNING' : 'CRITICAL',
       failedCount: failedServices.length
     };
   }
@@ -683,8 +708,8 @@ class ShitsukeManager {
 /**
  * Створення інструменту Shitsuke для MCP сервера
  */
-export function createShitsukeTool() {
-  const manager = new ShitsukeManager();
+export function createShitsukeTool(options = {}) {
+  const manager = options.manager || new ShitsukeManager(options);
   
   return {
     name: '5s-shitsuke',
@@ -773,6 +798,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   } else if (action === 'metrics') {
     manager.getPerformanceMetrics().then(console.log).catch(console.error);
   }
+}
+
+function parseMemoryPercent(memory) {
+  if (!memory || memory.status !== 'ok' || !memory.raw) return null;
+  const memLine = memory.raw.split('\n').find(line => line.trim().startsWith('Mem:'));
+  if (!memLine) return null;
+  const parts = memLine.trim().split(/\s+/);
+  const total = Number(parts[1]) || 0;
+  const used = Number(parts[2]) || 0;
+  if (total <= 0) return null;
+  return Math.round((used / total) * 1000) / 10;
 }
 
 function shellQuote(value) {
