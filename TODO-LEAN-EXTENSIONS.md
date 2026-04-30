@@ -1,6 +1,6 @@
-# Lean Extensions Roadmap
+# Lean Extensions Implementation Notes
 
-The current production surface is the 8-tool 5S MCP service documented in [docs/tools.md](docs/tools.md). Future Lean tools must build on the safety policy and maintenance engine.
+The current production surface is the 12-tool 5S MCP service documented in [docs/tools.md](docs/tools.md). The Lean extension checklist below has been implemented in `dev` as MCP tools that build on the safety policy and plan-first maintenance model.
 
 ## Phase 1: Kaizen
 
@@ -42,7 +42,7 @@ Requirements:
 - [x] `lean_ops` action `jidoka_check`: detect conditions that should stop automation.
 - [x] `lean_ops` action `andon_status`: produce a status board for health and maintenance readiness.
 
-## Acceptance Criteria For New Tools
+## Acceptance Criteria For Implemented Tools
 
 - MCP schema documented in `docs/tools.md`.
 - Tests cover success, policy block, and invalid input.

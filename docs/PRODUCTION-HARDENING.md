@@ -12,7 +12,7 @@ This service is hardened around one rule: cleanup tools must produce plans first
 6. `verify`: re-check services, disk, memory, and logs.
 7. `record`: write evidence to changelog/audit history.
 
-## New Tools
+## Production Control and Lean Tools
 
 ### `5s_safety_policy`
 
@@ -74,6 +74,50 @@ Denied roots include:
 - `/var/lib`
 - `/root/.ssh`
 
+### `kaizen_improve`
+
+Continuous improvement tool for agent-maintained improvement loops.
+
+Actions:
+- `suggest`: inspect repo, docs, tests, and cleanup opportunities.
+- `track`: add an improvement initiative to the backlog.
+- `report`: summarize initiatives by status and priority.
+
+The tool is read-only for system state. Cleanup recommendations point to `seiso_clean_system` plans instead of executing cleanup directly.
+
+### `gemba_inspect`
+
+Read-only inspection tool for actual working context.
+
+Actions:
+- `walk`: list file metadata under a target path.
+- `observe`: read disk, process, and optional service status.
+- `context`: gather redacted previews from docs, config, and source files.
+
+The tool evaluates target paths through `5s_safety_policy` and redacts secret-like values from returned context.
+
+### `poka_yoke_guard`
+
+Error-prevention tool for risky workflow patterns.
+
+Actions:
+- `scan`: find direct deletes, secret literals, hardcoded root paths, and cron edits.
+- `suggest`: map findings to prevention mechanisms.
+- `validate`: pass or fail based on high-risk findings.
+
+The tool does not edit files. Findings map to approval levels and safe follow-up tools.
+
+### `lean_ops`
+
+Lean operations tool for waste, automation stop conditions, and status boards.
+
+Actions:
+- `muda_detect`: detect waste signals and link cleanup to Seiso plans.
+- `jidoka_check`: identify conditions that should stop automation.
+- `andon_status`: return `green`, `yellow`, or `red` health and maintenance readiness.
+
+The tool performs read-only observations and reports whether maintenance should proceed.
+
 ## Production Readiness Checklist
 
 - Safety policy exists in code and config.
@@ -81,9 +125,10 @@ Denied roots include:
 - Cron is managed through MCP without hardcoded deployment paths.
 - Cron defaults avoid destructive maintenance.
 - Remote cleanup is dry-run by default and evidence-driven.
+- Lean extensions are registered as MCP tools and remain read-only or plan-linked.
 - MCP SDK is updated to a non-vulnerable version.
 - Changelog modules are valid ESM.
-- Test suite covers safety policy, cron management, remote cleanup helpers, and MCP tool registration.
+- Test suite covers safety policy, cron management, remote cleanup helpers, Lean extension tools, and MCP tool registration.
 
 ## Verification
 

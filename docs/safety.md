@@ -87,3 +87,12 @@ Add a deny rule:
   }
 }
 ```
+
+## Lean Extension Safety
+
+Lean extension tools do not bypass the safety contract:
+
+- `kaizen_improve` may record initiatives, but cleanup recommendations link to `seiso_clean_system` plans.
+- `gemba_inspect` is read-only and blocks denied target paths.
+- `poka_yoke_guard` reports prevention findings and approval levels, but does not edit files.
+- `lean_ops` observes disk, memory, and waste signals; any cleanup follow-up still requires Seiso plan/stage/apply.

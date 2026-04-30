@@ -8,6 +8,7 @@ Production-safe MCP server for applying the 5S methodology to server maintenance
 - Transport: MCP stdio
 - Branch model: `main` for production, `dev` for development
 - Safety model: plan-first, deny/allow policy, staged apply
+- MCP surface: 12 tools, including 5S core, safety controls, remote clean, and Lean extensions
 - Verification:
 
 ```bash
@@ -102,7 +103,7 @@ The demo uses current MCP tool schemas and only creates cleanup plans; it does n
 - [docs/remote-clean.md](docs/remote-clean.md) - remote cleanup mode
 - [docs/changelog.md](docs/changelog.md) - changelog storage and CLI
 - [docs/PRODUCTION-HARDENING.md](docs/PRODUCTION-HARDENING.md) - hardening checklist
-- [TODO-LEAN-EXTENSIONS.md](TODO-LEAN-EXTENSIONS.md) - roadmap
+- [TODO-LEAN-EXTENSIONS.md](TODO-LEAN-EXTENSIONS.md) - completed Lean extension implementation notes
 
 ## Repository Layout
 

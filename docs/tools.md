@@ -1,5 +1,7 @@
 # MCP Tools
 
+The production MCP surface currently exposes 12 tools. Cleanup-capable workflows are plan-first; Lean extension tools are read-only, backlog-only, or linked back to safe Seiso/Cron follow-up tools.
+
 ## `seiri_sort_analyze`
 
 Classifies files, processes, packages, and logs. It does not remove anything.
@@ -176,6 +178,23 @@ Actions:
 - `track`: add an improvement initiative to the backlog.
 - `report`: summarize tracked initiatives.
 
+Backlog storage defaults to `/tmp/5s-kaizen-backlog.json` and can be overridden with `FIVE_S_KAIZEN_BACKLOG`.
+
+Track example:
+
+```json
+{
+  "action": "track",
+  "initiative": {
+    "title": "Add weekly Poka-Yoke validation to release checks",
+    "description": "Run poka_yoke_guard validate before merging cleanup changes.",
+    "priority": "medium",
+    "status": "open",
+    "source": "agent"
+  }
+}
+```
+
 ## `gemba_inspect`
 
 Read-only source inspection. It respects safety policy for target paths and redacts secret-like values from context output.
@@ -194,6 +213,16 @@ Actions:
 - `observe`: read disk/process/service state.
 - `context`: gather redacted previews from docs/config/source files.
 
+Use `observe` for runtime context:
+
+```json
+{
+  "action": "observe",
+  "target_path": ".",
+  "service": "ssh"
+}
+```
+
 ## `poka_yoke_guard`
 
 Error-prevention scan/suggest/validate. It does not edit files; suggested fixes point to safe tools and approval levels.
@@ -211,6 +240,8 @@ Actions:
 - `scan`: identify risky command, secret, path, or cron patterns.
 - `suggest`: group findings into prevention recommendations.
 - `validate`: pass/fail based on high-risk findings.
+
+Current prevention rules detect direct delete pipelines, possible secret literals, hardcoded root deployment paths, and cron edits that should go through `5s_cron_manager`.
 
 ## `lean_ops`
 
@@ -234,3 +265,5 @@ Actions:
 - `muda_detect`: detect waste signals and link cleanup to Seiso plans.
 - `jidoka_check`: decide whether automation should stop based on critical thresholds.
 - `andon_status`: return `green`, `yellow`, or `red` status with summary details.
+
+`lean_ops` only reports state. If `muda_detect` finds cleanup potential, the follow-up remains `seiso_clean_system` `plan -> stage -> apply`.

@@ -97,6 +97,51 @@ Use `5s-shitsuke`:
 
 The legacy `schedule` action is read-only and returns cron content. Use `5s_cron_manager` to write or remove cron files.
 
+## Lean Operating Loop
+
+Use the Lean extension tools before or after maintenance when an agent needs improvement tracking, source inspection, risk prevention, or operational status.
+
+1. Find improvement opportunities with `kaizen_improve`:
+
+```json
+{
+  "action": "suggest",
+  "scope": "all",
+  "target_path": "."
+}
+```
+
+2. Inspect the real working context without mutation with `gemba_inspect`:
+
+```json
+{
+  "action": "context",
+  "target_path": ".",
+  "max_files": 20
+}
+```
+
+3. Check for risky workflow patterns with `poka_yoke_guard`:
+
+```json
+{
+  "action": "validate",
+  "target_path": ".",
+  "max_files": 100
+}
+```
+
+4. Check maintenance readiness with `lean_ops`:
+
+```json
+{
+  "action": "andon_status",
+  "target_path": "."
+}
+```
+
+Cleanup recommendations from these tools must still go through `seiso_clean_system` plan, stage, and approved apply. Cron recommendations must go through `5s_cron_manager`. Improvement records are tracked through `kaizen_improve`.
+
 ## Verification
 
 Before committing operational changes:
