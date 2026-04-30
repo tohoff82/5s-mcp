@@ -4,9 +4,9 @@ The current production surface is the 8-tool 5S MCP service documented in [docs/
 
 ## Phase 1: Kaizen
 
-- [ ] `kaizen_suggest`: suggest incremental improvements from audit and changelog history.
-- [ ] `kaizen_track`: track improvement initiatives over time.
-- [ ] `kaizen_report`: summarize improvement metrics.
+- [x] `kaizen_improve` action `suggest`: suggest incremental improvements from repo/docs/tests/cleanup context.
+- [x] `kaizen_improve` action `track`: track improvement initiatives over time.
+- [x] `kaizen_improve` action `report`: summarize improvement metrics.
 
 Requirements:
 

@@ -18,6 +18,7 @@ import { createShitsukeTool } from './tools/shitsuke.js';
 import { createSafetyPolicyTool } from './tools/safety-policy.js';
 import { createCronManagerTool } from './tools/cron-manager.js';
 import { createRemoteCleanTool } from './tools/remote-clean.js';
+import { createKaizenTool } from './tools/kaizen.js';
 
 class FiveSMcpServer {
   constructor() {
@@ -109,6 +110,7 @@ class FiveSMcpServer {
       createSafetyPolicyTool(),                    // Production safety policy
       createCronManagerTool(),                     // Cron schedule management
       createRemoteCleanTool(),                     // Remote cleanup mode
+      createKaizenTool(),                          // Kaizen continuous improvement
     ];
 
     tools.forEach(tool => {

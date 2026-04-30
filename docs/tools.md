@@ -157,3 +157,21 @@ Actions:
 - `analyze`
 - `plan`
 - `cleanup`
+
+## `kaizen_improve`
+
+Continuous improvement backlog and recommendations. Read-only by default; cleanup recommendations link to `seiso_clean_system` plans.
+
+```json
+{
+  "action": "suggest",
+  "scope": "all",
+  "target_path": "."
+}
+```
+
+Actions:
+
+- `suggest`: inspect repo/docs/tests/cleanup opportunities.
+- `track`: add an improvement initiative to the backlog.
+- `report`: summarize tracked initiatives.
