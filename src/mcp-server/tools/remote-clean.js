@@ -5,8 +5,11 @@ import { SafetyPolicyManager } from '../../safety-policy.js';
 
 const execFileAsync = promisify(execFile);
 
-export function createRemoteCleanTool() {
-  const policy = new SafetyPolicyManager();
+const REMOTE_SKIP_SUFFIXES = ['.pid', '.sock', '.lock'];
+
+export function createRemoteCleanTool(options = {}) {
+  const policy = options.policy || new SafetyPolicyManager();
+  const executor = options.executor;
 
   return {
     name: '5s_remote_clean',
@@ -63,20 +66,20 @@ export function createRemoteCleanTool() {
 
       switch (action) {
         case 'analyze':
-          return await analyzeRemote(ssh, evidence);
+          return await analyzeRemote(ssh, evidence, executor);
 
         case 'plan':
-          return await buildRemotePlan(policy, ssh, evidence);
+          return await buildRemotePlan(policy, ssh, evidence, executor);
 
         case 'cleanup': {
-          const plan = await buildRemotePlan(policy, ssh, evidence);
+          const plan = await buildRemotePlan(policy, ssh, evidence, executor);
           if (dry_run) {
             return { ...plan, action, dry_run, executed: false };
           }
           if (!approved) {
             throw new Error('approved=true is required for remote cleanup apply');
           }
-          return await applyRemotePlan(ssh, plan, { dry_run, approved });
+          return await applyRemotePlan(ssh, plan, { dry_run, approved, executor, policy });
         }
 
         default:
@@ -86,7 +89,7 @@ export function createRemoteCleanTool() {
   };
 }
 
-async function analyzeRemote(ssh, evidence) {
+async function analyzeRemote(ssh, evidence, executor) {
   const inferredPaths = inferTouchedPaths(evidence.paths_visited, evidence.commands_executed);
   const safeCandidates = inferredPaths.filter(candidate => isRemoteCleanupCandidate(candidate.path));
   const inspections = [];
@@ -94,7 +97,7 @@ async function analyzeRemote(ssh, evidence) {
   for (const candidate of safeCandidates.slice(0, evidence.max_items)) {
     const command = `if [ -e ${shellQuote(candidate.path)} ]; then stat -c '%n|%F|%s|%Y' ${shellQuote(candidate.path)}; fi`;
     try {
-      const { stdout } = await runSsh(ssh, command);
+      const { stdout } = await runRemote(ssh, command, executor);
       if (stdout.trim()) {
         inspections.push(parseStat(stdout.trim(), candidate));
       }
@@ -113,19 +116,41 @@ async function analyzeRemote(ssh, evidence) {
   };
 }
 
-async function buildRemotePlan(policy, ssh, evidence) {
-  const analysis = await analyzeRemote(ssh, evidence);
+async function buildRemotePlan(policy, ssh, evidence, executor) {
+  const analysis = await analyzeRemote(ssh, evidence, executor);
   const operations = [];
 
   for (const candidate of analysis.candidates) {
     if (candidate.error) continue;
+    const manifest = await collectRemoteManifest(ssh, candidate, evidence, executor);
+    if (manifest.length === 0) {
+      operations.push({
+        id: operationId(candidate.path),
+        type: 'remote_noop',
+        path: candidate.path,
+        command: `remote-manifest-remove ${candidate.path}`,
+        remote_command: null,
+        reason: candidate.reason,
+        manifest,
+        destructive: false,
+        status: 'no_candidates',
+        verdict: await policy.evaluateOperation({
+          command: `remote-manifest-remove ${candidate.path}`,
+          paths: [candidate.path],
+          destructive: false,
+          approved: false
+        })
+      });
+      continue;
+    }
+
     const command = `remote-manifest-remove ${candidate.path}`;
+    const remoteCommand = buildRemoteRemoveCommand(manifest);
     const verdict = await policy.evaluateOperation({
       command,
-      remote_command: `rm -r -- ${shellQuote(candidate.path)}`,
-      paths: [candidate.path],
+      paths: manifest.map(item => item.path),
       destructive: true,
-      approved: true
+      approved: false
     });
 
     operations.push({
@@ -133,15 +158,19 @@ async function buildRemotePlan(policy, ssh, evidence) {
       type: 'remote_remove',
       path: candidate.path,
       command,
+      remote_command: remoteCommand,
       reason: candidate.reason,
-      size_bytes: candidate.size_bytes,
+      manifest,
+      size_bytes: manifest.reduce((sum, item) => sum + (item.size_bytes || 0), 0),
       mtime_epoch: candidate.mtime_epoch,
+      destructive: true,
       verdict
     });
   }
 
-  const blocked = operations.filter(operation => !operation.verdict.allowed);
-  const runnable = operations.filter(operation => operation.verdict.allowed);
+  const actionable = operations.filter(operation => operation.type === 'remote_remove');
+  const blocked = actionable.filter(operation => !operation.verdict.allowed);
+  const runnable = actionable.filter(operation => operation.verdict.allowed);
 
   return {
     timestamp: new Date().toISOString(),
@@ -153,6 +182,8 @@ async function buildRemotePlan(policy, ssh, evidence) {
     operations,
     summary: {
       total: operations.length,
+      actionable: actionable.length,
+      no_candidates: operations.filter(operation => operation.status === 'no_candidates').length,
       runnable: runnable.length,
       blocked: blocked.length,
       estimated_bytes: runnable.reduce((sum, item) => sum + (item.size_bytes || 0), 0)
@@ -164,13 +195,35 @@ async function applyRemotePlan(ssh, plan, options) {
   const results = [];
 
   for (const operation of plan.operations) {
-    if (!operation.verdict.allowed) {
-      results.push({ id: operation.id, path: operation.path, skipped: true, reason: 'Blocked by policy' });
+    if (operation.type !== 'remote_remove') {
+      results.push({ id: operation.id, path: operation.path, skipped: true, reason: operation.status || 'No remote cleanup action' });
+      continue;
+    }
+
+    const verdict = await options.policy.evaluateOperation({
+      command: operation.command,
+      paths: (operation.manifest || []).map(item => item.path),
+      destructive: true,
+      approved: true
+    });
+
+    if (!verdict.allowed) {
+      results.push({ id: operation.id, path: operation.path, skipped: true, reason: verdict.reasons.join('; ') });
+      continue;
+    }
+
+    if (operation.verdict.risk_level === 'P4_FORBIDDEN') {
+      results.push({ id: operation.id, path: operation.path, skipped: true, reason: 'Blocked by plan policy verdict' });
+      continue;
+    }
+
+    if (!operation.remote_command) {
+      results.push({ id: operation.id, path: operation.path, skipped: true, reason: 'Missing remote_command' });
       continue;
     }
 
     try {
-      const { stdout, stderr } = await runSsh(ssh, operation.remote_command);
+      const { stdout, stderr } = await runRemote(ssh, operation.remote_command, options.executor);
       results.push({ id: operation.id, path: operation.path, executed: true, stdout: stdout.trim(), stderr: stderr.trim() });
     } catch (error) {
       results.push({ id: operation.id, path: operation.path, executed: false, error: error.message });
@@ -228,13 +281,71 @@ function normalizeRemotePath(value) {
 
 export function isRemoteCleanupCandidate(candidatePath) {
   if (!candidatePath) return false;
-  const allowed = ['/tmp/', '/var/tmp/', '/home/'];
-  const denied = ['/etc/', '/usr/', '/bin/', '/sbin/', '/lib/', '/lib64/', '/var/lib/', '/root/.ssh/'];
-  if (denied.some(prefix => `${candidatePath}/`.startsWith(prefix))) return false;
-  return allowed.some(prefix => `${candidatePath}/`.startsWith(prefix));
+  const normalized = path.posix.normalize(candidatePath);
+  const denied = ['/etc', '/usr', '/bin', '/sbin', '/lib', '/lib64', '/var/lib', '/root/.ssh'];
+  if (denied.some(prefix => normalized === prefix || normalized.startsWith(`${prefix}/`))) return false;
+
+  if (normalized.startsWith('/tmp/')) return normalized.split('/').filter(Boolean).length >= 2;
+  if (normalized.startsWith('/var/tmp/')) return normalized.split('/').filter(Boolean).length >= 3;
+  if (normalized.startsWith('/home/')) return normalized.split('/').filter(Boolean).length >= 3;
+  return false;
 }
 
-async function runSsh(ssh, command) {
+async function collectRemoteManifest(ssh, candidate, evidence, executor) {
+  const command = [
+    `target=${shellQuote(candidate.path)}`,
+    'if [ -f "$target" ]; then',
+    remoteStatCommand('"$target"'),
+    'elif [ -d "$target" ]; then',
+    `find "$target" -mindepth 1 -maxdepth 3 -type f ${remoteSkipExpression()} -printf '%p|%s|%T@|%u|%g|%i\\n' | head -n ${Number(evidence.max_items) || 50}`,
+    'fi'
+  ].join('; ');
+
+  try {
+    const { stdout } = await runRemote(ssh, command, executor);
+    return parseManifest(stdout);
+  } catch {
+    return [];
+  }
+}
+
+function parseManifest(output) {
+  return String(output || '')
+    .split('\n')
+    .filter(Boolean)
+    .map(line => {
+      const [filePath, size, mtime, owner, group, inode] = line.split('|');
+      return {
+        id: `remote-item-${Buffer.from(filePath || '').toString('base64url').slice(0, 18)}`,
+        path: filePath,
+        size_bytes: Number(size) || 0,
+        mtime_epoch: Number.parseFloat(mtime) || null,
+        owner,
+        group,
+        inode,
+        file_type: 'file'
+      };
+    })
+    .filter(item => item.path && isRemoteCleanupCandidate(item.path) && !REMOTE_SKIP_SUFFIXES.some(suffix => item.path.endsWith(suffix)));
+}
+
+function buildRemoteRemoveCommand(manifest) {
+  const files = manifest.map(item => shellQuote(item.path)).join(' ');
+  return `rm -f -- ${files}`;
+}
+
+function remoteStatCommand(targetExpression) {
+  return `stat -c '%n|%s|%Y|%U|%G|%i' ${targetExpression}`;
+}
+
+function remoteSkipExpression() {
+  return REMOTE_SKIP_SUFFIXES.map(suffix => `! -name '*${suffix}'`).join(' ');
+}
+
+async function runRemote(ssh, command, executor) {
+  if (executor) {
+    return await executor.run(ssh, command);
+  }
   const args = ['-p', String(ssh.port), '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=accept-new'];
   if (ssh.identity_file) args.push('-i', ssh.identity_file);
   args.push(`${ssh.user}@${ssh.host}`, command);
