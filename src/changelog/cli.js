@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
-const FiveSChangelogManager = require('./changelog-manager');
-const fs = require('fs').promises;
-const path = require('path');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import FiveSChangelogManager from './changelog-manager.js';
+
+const __filename = fileURLToPath(import.meta.url);
 
 /**
  * CLI для управління 5S Changelog System
@@ -418,9 +421,10 @@ Environment Variables:
 }
 
 // Запуск CLI якщо файл виконується безпосередньо
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   const cli = new FiveSChangelogCLI();
   cli.run();
 }
 
-module.exports = FiveSChangelogCLI;
+export { FiveSChangelogCLI };
+export default FiveSChangelogCLI;

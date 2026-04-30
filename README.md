@@ -25,6 +25,9 @@
 - 🧹 **Seiso (Shine)** — очищення кешу, логів, тимчасових файлів
 - 📋 **Seiketsu (Standardize)** — перевірка стандартів безпеки та продуктивності
 - ✅ **Shitsuke (Sustain)** — щотижневі аудити та автоматизація
+- 🛡️ **Safety Policy** — agent-managed deny/allow правила для production cleanup
+- 🕒 **Cron Manager** — керування cron без hardcoded server path
+- 🌐 **Remote Clean** — dry-run-first прибирання після роботи агента на remote серверах
 
 ## 📦 Встановлення
 
@@ -154,6 +157,51 @@ npm install github:tohoff82/5s-mcp
 }
 ```
 
+### `5s_safety_policy`
+
+Керування production deny/allow правилами та перевірка операцій перед виконанням.
+
+```json
+{
+  "action": "list|add_rule|remove_rule|evaluate|reset",
+  "kind": "deny|allow|all",
+  "operation": {
+    "command": "manifest-remove /tmp/agent-run",
+    "paths": ["/tmp/agent-run"],
+    "destructive": true,
+    "approved": false
+  }
+}
+```
+
+### `5s_cron_manager`
+
+Керування cron jobs без прив'язки до конкретного сервера.
+
+```json
+{
+  "action": "render|install|read|remove|validate",
+  "project_dir": "/opt/5s-mcp",
+  "cron_path": "/etc/cron.d/5s-methodology",
+  "dry_run": true
+}
+```
+
+### `5s_remote_clean`
+
+Remote cleanup mode: агент передає host, evidence своєї сесії, отримує план і тільки після approval може застосувати cleanup.
+
+```json
+{
+  "action": "analyze|plan|cleanup",
+  "host": "example.org",
+  "user": "root",
+  "paths_visited": ["/tmp/agent-run-123"],
+  "commands_executed": ["cd /tmp/agent-run-123 && npm test"],
+  "dry_run": true
+}
+```
+
 ## 📊 Приклад виводу
 
 ```json
@@ -210,6 +258,7 @@ npm install github:tohoff82/5s-mcp
 
 - [Architecture](docs/README.md)
 - [5S Methodology Guide](docs/maintenance/5s-methodology/README.md)
+- [Production Hardening](docs/PRODUCTION-HARDENING.md)
 - [Security Procedures](docs/security/current-state.md)
 
 ## 🤝 Contributing
@@ -284,4 +333,3 @@ ui-agent/services/tools-executor
 | memory-mcp | /opt/memory-mcp | github.com/tohoff82/memory-mcp |
 | rabbitmq-mcp | /opt/rabbitmq-mcp | github.com/tohoff82/rabbitMQ-mcp |
 | ubuntu-mcp | /opt/ubuntu-mcp | github.com/tohoff82/ubuntu-mcp |
-

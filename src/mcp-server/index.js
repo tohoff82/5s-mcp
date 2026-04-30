@@ -13,26 +13,24 @@
 
 import { FiveSMcpServer } from './server.js';
 
-console.log('🚀 Starting 5S Methodology MCP Server...');
-console.log('📋 Based on Hiroyuki Hirano methodology');
-console.log('🎯 Target server: htz-legistrator (138.201.190.221)');
-console.log('');
+console.error('Starting 5S Methodology MCP Server...');
+console.error('Based on Hiroyuki Hirano methodology');
 
 const server = new FiveSMcpServer();
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('\n🛑 Shutting down 5S MCP Server...');
+  console.error('\nShutting down 5S MCP Server...');
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  console.log('\n🛑 Shutting down 5S MCP Server...');
+  console.error('\nShutting down 5S MCP Server...');
   process.exit(0);
 });
 
 // Запускаємо сервер
 server.start().catch((error) => {
-  console.error('❌ Failed to start 5S MCP Server:', error);
+  console.error('Failed to start 5S MCP Server:', error);
   process.exit(1);
 });

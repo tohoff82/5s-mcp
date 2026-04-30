@@ -5,8 +5,11 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 
 const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Shitsuke (躾) - Дисципліна/Дотримання
@@ -364,8 +367,8 @@ class ShitsukeManager {
             recommendations.push({
               priority: 'HIGH',
               module: module.module,
-              action: 'Запустити очищення старих тимчасових файлів',
-              command: 'find /tmp -type f -mtime +7 -delete'
+              action: 'Створити staged Seiso план для старих тимчасових файлів',
+              command: 'seiso_clean_system action=plan targets=["temp"] preserve_days=7'
             });
           }
           
@@ -494,7 +497,12 @@ class ShitsukeManager {
     try {
       await fs.appendFile(this.auditLogPath, logEntry);
     } catch (error) {
-      console.error('Failed to log audit event:', error);
+      const fallbackPath = path.join('/tmp', '5s-audit.log');
+      try {
+        await fs.appendFile(fallbackPath, logEntry);
+      } catch {
+        // Health checks must not fail because audit logging is unavailable.
+      }
     }
   }
 
@@ -557,38 +565,26 @@ class ShitsukeManager {
    * Налаштування автоматизованих задач для дисципліни
    */
   async setupScheduledTasks() {
+    const projectDir = this.projectDir || path.resolve(__dirname, '../../..');
+    const nodeBin = process.execPath || 'node';
     const cronContent = `# 5S Methodology Automated Tasks
+# Managed by legacy 5s-shitsuke schedule action. Prefer 5s_cron_manager for full control.
 # Weekly audit every Sunday at 23:00
-0 23 * * 0 root cd /root/ui-agent-5s && node src/mcp-server/tools/shitsuke.js audit >> /var/log/5s-audit.log 2>&1
+0 23 * * 0 root cd ${shellQuote(projectDir)} && ${shellQuote(nodeBin)} src/mcp-server/tools/shitsuke.js audit >> /var/log/5s-audit.log 2>&1
 
 # Daily quick health check at 06:00
-0 6 * * * root cd /root/ui-agent-5s && node src/mcp-server/tools/shitsuke.js health >> /var/log/5s-daily.log 2>&1
-
-# Monthly deep clean first day of month at 02:00
-0 2 1 * * root cd /root/ui-agent-5s && node src/mcp-server/tools/seiso.js deep-clean >> /var/log/5s-cleanup.log 2>&1
+0 6 * * * root cd ${shellQuote(projectDir)} && ${shellQuote(nodeBin)} src/mcp-server/tools/shitsuke.js health >> /var/log/5s-daily.log 2>&1
 `;
 
-    try {
-      await fs.writeFile(this.scheduleTasksPath, cronContent);
-      
-      // Перезавантажуємо cron
-      await execAsync('systemctl reload cron');
-      
-      return {
-        success: true,
-        message: 'Автоматизовані задачі 5S налаштовані успішно',
-        tasks: [
-          'Щотижневий аудит: неділя 23:00',
-          'Щоденна перевірка здоров\'я: 06:00',
-          'Щомісячне глибоке очищення: 1 число 02:00'
-        ]
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Не вдалося налаштувати cron задачі: ${error.message}`
-      };
-    }
+    return {
+      success: true,
+      deprecated: true,
+      message: 'Legacy schedule action is read-only. Use 5s_cron_manager action=install to write cron files.',
+      cron_path: this.scheduleTasksPath,
+      rendered: cronContent,
+      project_dir: projectDir,
+      node_bin: nodeBin
+    };
   }
 
   /**
@@ -708,6 +704,10 @@ export function createShitsukeTool() {
             period: {
               type: 'string',
               description: 'Period для звіту (weekly, monthly)'
+            },
+            project_dir: {
+              type: 'string',
+              description: 'Project directory for legacy schedule action'
             }
           }
         }
@@ -729,6 +729,9 @@ export function createShitsukeTool() {
           return await manager.quickHealthCheck();
           
         case 'schedule':
+          if (options.project_dir) {
+            manager.projectDir = options.project_dir;
+          }
           return await manager.setupScheduledTasks();
           
         case 'report':
@@ -770,4 +773,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   } else if (action === 'metrics') {
     manager.getPerformanceMetrics().then(console.log).catch(console.error);
   }
+}
+
+function shellQuote(value) {
+  if (/^[A-Za-z0-9_./:-]+$/.test(value)) return value;
+  return `'${String(value).replace(/'/g, "'\\''")}'`;
 }

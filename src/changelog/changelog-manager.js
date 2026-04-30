@@ -1,12 +1,12 @@
-const fs = require('fs').promises;
-const path = require('path');
-const FiveSChangelogMongo = require('./mongodb-connector');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { FiveSChangelogMongo } from './mongodb-connector.js';
 
 /**
  * 5S Changelog Manager
  * Головний клас для управління changelog системою
  */
-class FiveSChangelogManager {
+export class FiveSChangelogManager {
   constructor(config = {}) {
     this.config = {
       baseDir: config.baseDir || 'docs/changes/5s-procedures',
@@ -392,10 +392,19 @@ ${entry.tags?.length ? `## Теги\n${entry.tags.map(tag => `\`${tag}\``).join(
   /**
    * Пошук у файловій системі
    */
-  async searchInFileSystem(filters) {
-    // Базова реалізація - буде розширена за потребою
+  async searchInFileSystem(filters = {}) {
     const results = [];
-    // TODO: Implement file system search
+    const files = await this.findJsonEntries(this.config.baseDir);
+    for (const file of files) {
+      try {
+        const entry = JSON.parse(await fs.readFile(file, 'utf8'));
+        if (this.entryMatchesFilters(entry, filters)) {
+          results.push(entry);
+        }
+      } catch {
+        // Ignore malformed historical files; validation catches new writes.
+      }
+    }
     return results;
   }
 
@@ -414,10 +423,45 @@ ${entry.tags?.length ? `## Теги\n${entry.tags.map(tag => `\`${tag}\``).join(
       await fs.access(currentQuarterPath);
       return currentQuarterPath;
     } catch {
-      // Файл не знайдено у поточному кварталі, шукаємо в інших
-      // TODO: Implement comprehensive search across all quarters
-      return null;
+      const matches = await this.findJsonEntries(this.config.baseDir);
+      return matches.find(file => path.basename(file) === `${id}.json`) || null;
     }
+  }
+
+  async findJsonEntries(root) {
+    const results = [];
+    let entries = [];
+    try {
+      entries = await fs.readdir(root, { withFileTypes: true });
+    } catch {
+      return results;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(root, entry.name);
+      if (entry.isDirectory()) {
+        results.push(...await this.findJsonEntries(fullPath));
+      } else if (entry.isFile() && entry.name.endsWith('.json') && !entry.name.includes('template')) {
+        results.push(fullPath);
+      }
+    }
+    return results;
+  }
+
+  entryMatchesFilters(entry, filters) {
+    const mapping = {
+      procedure_type: entry.procedure?.type,
+      type: entry.procedure?.type,
+      severity: entry.impact?.severity,
+      status: entry.status?.current,
+      executor: entry.human_resources?.executor,
+      quarter: entry.quarter
+    };
+
+    return Object.entries(filters || {}).every(([key, value]) => {
+      if (value === undefined || value === null || value === '') return true;
+      return String(mapping[key] ?? this.getNestedValue(entry, key) ?? '') === String(value);
+    });
   }
 
   /**
@@ -437,4 +481,4 @@ ${entry.tags?.length ? `## Теги\n${entry.tags.map(tag => `\`${tag}\``).join(
   }
 }
 
-module.exports = FiveSChangelogManager;
+export default FiveSChangelogManager;

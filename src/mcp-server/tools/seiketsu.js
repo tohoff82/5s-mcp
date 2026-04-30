@@ -9,6 +9,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { SafetyPolicyManager } from '../../safety-policy.js';
 
 const execAsync = promisify(exec);
 
@@ -21,7 +22,7 @@ export function createSeiketsuTool() {
       properties: {
         action: {
           type: 'string',
-          enum: ['audit', 'create_standards', 'validate_compliance', 'generate_checklist', 'monitor_drift'],
+          enum: ['audit', 'create_standards', 'validate_compliance', 'generate_checklist', 'monitor_drift', 'generate_policy'],
           description: 'Дія: аудит стандартів, створення стандартів, валідація відповідності, генерація чеклиста, моніторинг відхилень'
         },
         domain: {
@@ -83,6 +84,10 @@ export function createSeiketsuTool() {
           case 'monitor_drift':
             results.compliance_status = await monitorStandardsDrift(domain);
             break;
+
+          case 'generate_policy':
+            results.standards = await generateFormalPolicy(domain, standard_level);
+            break;
             
           default:
             throw new Error(`Unknown action: ${action}`);
@@ -101,6 +106,48 @@ export function createSeiketsuTool() {
         };
       }
     }
+  };
+}
+
+async function generateFormalPolicy(domain, standardLevel) {
+  const safety = await new SafetyPolicyManager().listRules('all');
+  return {
+    domain,
+    standard_level: standardLevel,
+    retention_policy: {
+      temp_files_days: 7,
+      rotated_logs_days: 30,
+      audit_history_weeks: 52,
+      changelog_retention_quarters: 3
+    },
+    cleanup_policy: {
+      required_flow: ['observe', 'plan', 'evaluate', 'stage', 'apply', 'verify', 'record'],
+      direct_delete_commands_allowed: false,
+      manifest_required: true,
+      file_usage_checks: ['lsof', 'fuser', 'symlink_check', 'pid_sock_lock_skip']
+    },
+    backup_policy: {
+      backup_before_apply: true,
+      backup_root: '/backup/5s',
+      dry_run_artifact_required: true,
+      rollback_reference_required: true
+    },
+    service_criticality_policy: {
+      protected_services: safety.protected_services,
+      post_apply_checks: ['systemctl is-active', 'disk_before_after', 'memory_before_after']
+    },
+    approval_matrix: {
+      P0_SAFE: 'no approval for observe/read-only',
+      P1_LOW: 'approval recommended for destructive cache cleanup',
+      P2_MEDIUM: 'approval required',
+      P3_HIGH: 'explicit approved=true and staged backup required',
+      P4_FORBIDDEN: 'blocked by policy; policy change required'
+    },
+    rollback_sla: {
+      high_risk_restore_target_minutes: 15,
+      backup_verification_required: true
+    },
+    active_safety_policy: safety
   };
 }
 

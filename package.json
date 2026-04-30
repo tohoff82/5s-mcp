@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/mcp-server/index.js",
     "dev": "node --watch src/mcp-server/index.js",
-    "test": "node src/mcp-server/test-client.js"
+    "test": "node --test",
+    "check": "node --check src/mcp-server/index.js && node --check src/mcp-server/server.js && node --check src/maintenance-engine.js && node --check src/mcp-server/tools/seiri.js && node --check src/mcp-server/tools/seiso.js && node --check src/mcp-server/tools/seiketsu.js && node --check src/mcp-server/tools/safety-policy.js && node --check src/mcp-server/tools/cron-manager.js && node --check src/mcp-server/tools/remote-clean.js && node --check src/changelog/changelog-manager.js && node --check src/changelog/cli.js && node --check demo.js"
   },
   "keywords": [
     "5S",
@@ -35,7 +36,7 @@
   },
   "homepage": "https://github.com/tohoff82/5s-mcp#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.4.0"
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "engines": {
     "node": ">=18.0.0"

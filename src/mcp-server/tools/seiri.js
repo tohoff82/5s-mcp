@@ -7,8 +7,7 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import fs from 'fs/promises';
-import path from 'path';
+import { SafetyPolicyManager } from '../../safety-policy.js';
 
 const execAsync = promisify(exec);
 
@@ -115,48 +114,113 @@ export function createSeiriTool() {
 
 async function analyzeFiles(targetPath, options) {
   const { age_days, size_mb, include_hidden } = options;
-  const cutoffDate = new Date(Date.now() - (age_days * 24 * 60 * 60 * 1000));
   
   try {
     // Базовий аналіз диску
-    const { stdout: dfOutput } = await execAsync('df -h /root');
+    const { stdout: dfOutput } = await execAsync(`df -h "${targetPath}" 2>/dev/null || df -h /`);
     
-    // Пошук великих файлів
-    const hiddenFlag = include_hidden ? '-a' : '';
-    const { stdout: largeFiles } = await execAsync(
-      `find "${targetPath}" ${hiddenFlag} -type f -size +${size_mb}M -exec ls -lh {} + 2>/dev/null || true`
-    );
-
-    // Старі файли
-    const { stdout: oldFiles } = await execAsync(
-      `find "${targetPath}" ${hiddenFlag} -type f -mtime +${age_days} -exec ls -lh {} + 2>/dev/null || true`
-    );
-
-    // Тимчасові файли
-    const { stdout: tempFiles } = await execAsync(
-      `find "${targetPath}" -name "*.tmp" -o -name "*.temp" -o -name "*~" -o -name "*.bak" 2>/dev/null || true`
-    );
+    const largeFiles = await collectFindFiles(targetPath, `-type f -size +${size_mb}M`, include_hidden);
+    const oldFiles = await collectFindFiles(targetPath, `-type f -mtime +${age_days}`, include_hidden);
+    const tempFiles = await collectFindFiles(targetPath, `\\( -name "*.tmp" -o -name "*.temp" -o -name "*~" -o -name "*.bak" \\) -type f`, include_hidden);
+    const classification = await classifySeiriFiles([...largeFiles, ...oldFiles, ...tempFiles], { age_days, size_mb });
 
     return {
       disk_usage: dfOutput.trim(),
       large_files: {
-        count: largeFiles.split('\n').filter(line => line.trim()).length,
-        files: largeFiles.trim().split('\n').filter(line => line.trim()).slice(0, 20) // Топ 20
+        count: largeFiles.length,
+        files: largeFiles.slice(0, 20)
       },
       old_files: {
-        count: oldFiles.split('\n').filter(line => line.trim()).length,
-        files: oldFiles.trim().split('\n').filter(line => line.trim()).slice(0, 20) // Топ 20
+        count: oldFiles.length,
+        files: oldFiles.slice(0, 20)
       },
       temp_files: {
-        count: tempFiles.split('\n').filter(line => line.trim()).length,
-        files: tempFiles.trim().split('\n').filter(line => line.trim())
+        count: tempFiles.length,
+        files: tempFiles
       },
+      classification,
       criteria_used: options
     };
 
   } catch (error) {
     throw new Error(`File analysis failed: ${error.message}`);
   }
+}
+
+async function collectFindFiles(targetPath, predicate, includeHidden) {
+  const hiddenFilter = includeHidden ? '' : ' ! -path "*/.*"';
+  const command = `find "${targetPath}" ${hiddenFilter} ${predicate} -printf "%p\\t%s\\t%T@\\t%u\\t%g\\t%i\\n" 2>/dev/null | head -200 || true`;
+  const { stdout } = await execAsync(command);
+  return stdout
+    .split('\n')
+    .filter(Boolean)
+    .map(line => {
+      const [filePath, size, mtime, owner, group, inode] = line.split('\t');
+      return {
+        path: filePath,
+        size_bytes: Number(size) || 0,
+        mtime_epoch: Number(mtime) || null,
+        owner,
+        group,
+        inode
+      };
+    });
+}
+
+async function classifySeiriFiles(files, criteria) {
+  const policy = new SafetyPolicyManager();
+  const unique = new Map();
+  for (const file of files) unique.set(file.path, file);
+
+  const buckets = {
+    necessary: [],
+    conditional: [],
+    delete_candidate: [],
+    forbidden: []
+  };
+
+  for (const file of unique.values()) {
+    const verdict = await policy.evaluateOperation({
+      command: `manifest-remove ${file.path}`,
+      paths: [file.path],
+      destructive: true
+    });
+
+    const enriched = {
+      ...file,
+      policy_risk: verdict.risk,
+      policy_reasons: verdict.reasons
+    };
+
+    if (!verdict.allowed || verdict.risk === 'critical') {
+      buckets.forbidden.push({ ...enriched, classification_reason: 'Blocked by safety policy' });
+    } else if (isServiceOrSourceArtifact(file.path)) {
+      buckets.conditional.push({ ...enriched, classification_reason: 'Looks service/code related; requires owner review' });
+    } else if (isTempLike(file.path) || isOldEnough(file.mtime_epoch, criteria.age_days)) {
+      buckets.delete_candidate.push({ ...enriched, classification_reason: 'Temp/old artifact allowed by policy, still requires Seiso plan' });
+    } else {
+      buckets.necessary.push({ ...enriched, classification_reason: 'No cleanup signal beyond size/scan match' });
+    }
+  }
+
+  return {
+    counts: Object.fromEntries(Object.entries(buckets).map(([key, value]) => [key, value.length])),
+    buckets
+  };
+}
+
+function isTempLike(filePath) {
+  return /\.(tmp|temp|bak)$|~$/.test(filePath);
+}
+
+function isOldEnough(mtimeEpoch, ageDays) {
+  if (!mtimeEpoch) return false;
+  return Date.now() / 1000 - mtimeEpoch > ageDays * 24 * 60 * 60;
+}
+
+function isServiceOrSourceArtifact(filePath) {
+  return /\/(src|services|packages|node_modules|\.git|systemd|nginx|ssh)\//.test(filePath)
+    || /\.(js|ts|py|sh|service|conf|env|key|pem)$/.test(filePath);
 }
 
 async function analyzeProcesses() {

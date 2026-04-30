@@ -11,10 +11,13 @@ import {
 
 // Імпорт 5С інструментів
 import { createSeiriTool } from './tools/seiri.js';
-import { createSeitonTool } from './tools/seiton.js';
+import { createSeitonTool } from './tools/seiton-enhanced.js';
 import { createSeisoTool } from './tools/seiso.js';
 import { createSeiketsuTool } from './tools/seiketsu.js';
 import { createShitsukeTool } from './tools/shitsuke.js';
+import { createSafetyPolicyTool } from './tools/safety-policy.js';
+import { createCronManagerTool } from './tools/cron-manager.js';
+import { createRemoteCleanTool } from './tools/remote-clean.js';
 
 class FiveSMcpServer {
   constructor() {
@@ -103,22 +106,25 @@ class FiveSMcpServer {
       createSeisoTool(),                           // 清掃 - Прибирання
       createSeiketsuTool(),                        // 清潔 - Стандартизація
       createShitsukeTool(),                        // 躾 - Дотримання
+      createSafetyPolicyTool(),                    // Production safety policy
+      createCronManagerTool(),                     // Cron schedule management
+      createRemoteCleanTool(),                     // Remote cleanup mode
     ];
 
     tools.forEach(tool => {
       this.tools.set(tool.name, tool);
       const memoryIndicator = tool.name === 'seiton_organize_system' ? ' 🌸 (with Memory-Driven Workspace Tree)' : '';
-      console.log(`[5S MCP] Registered tool: ${tool.name}${memoryIndicator}`);
+      console.error(`[5S MCP] Registered tool: ${tool.name}${memoryIndicator}`);
     });
 
-    console.log(`[5S MCP] Total tools registered: ${this.tools.size}`);
+    console.error(`[5S MCP] Total tools registered: ${this.tools.size}`);
   }
 
   async start() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.log('[5S MCP Server] Started and ready for connections');
-    console.log('🌸 Enhanced with Memory-Driven Intelligent Workspace Tree');
+    console.error('[5S MCP Server] Started and ready for connections');
+    console.error('🌸 Enhanced with Memory-Driven Intelligent Workspace Tree');
   }
 }
 

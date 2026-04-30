@@ -1,0 +1,123 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-04-29T00:00:00.000Z",
+  "defaults": {
+    "dry_run_required": true,
+    "approval_required_for_risk": "medium",
+    "max_risk_without_approval": "low"
+  },
+  "deny": [
+    {
+      "id": "deny-ui-agent-root",
+      "type": "path_prefix",
+      "value": "/root/ui-agent",
+      "reason": "Self-referential agent runtime"
+    },
+    {
+      "id": "deny-systemd-units",
+      "type": "path_prefix",
+      "value": "/etc/systemd/system",
+      "reason": "System service definitions"
+    },
+    {
+      "id": "deny-ssh-config",
+      "type": "path_prefix",
+      "value": "/etc/ssh",
+      "reason": "SSH access and recovery path"
+    },
+    {
+      "id": "deny-nginx-config",
+      "type": "path_prefix",
+      "value": "/etc/nginx",
+      "reason": "Reverse proxy configuration"
+    },
+    {
+      "id": "deny-mongodb-data",
+      "type": "path_prefix",
+      "value": "/var/lib/mongodb",
+      "reason": "MongoDB data files"
+    },
+    {
+      "id": "deny-rabbitmq-data",
+      "type": "path_prefix",
+      "value": "/var/lib/rabbitmq",
+      "reason": "RabbitMQ data files"
+    },
+    {
+      "id": "deny-root-delete",
+      "type": "command_regex",
+      "value": "\\brm\\s+-rf\\s+/(\\s|$)",
+      "reason": "Recursive delete of root filesystem"
+    },
+    {
+      "id": "deny-systemd-delete",
+      "type": "command_regex",
+      "value": "\\bfind\\s+/etc/systemd\\b.*\\b-delete\\b",
+      "reason": "Deleting systemd files"
+    }
+  ],
+  "allow": [
+    {
+      "id": "allow-apt-cache",
+      "type": "path_prefix",
+      "value": "/var/cache/apt",
+      "reason": "Package cache cleanup"
+    },
+    {
+      "id": "allow-var-tmp-old",
+      "type": "path_prefix",
+      "value": "/var/tmp",
+      "min_age_days": 7,
+      "reason": "Old temporary files"
+    },
+    {
+      "id": "allow-tmp-old",
+      "type": "path_prefix",
+      "value": "/tmp",
+      "min_age_days": 7,
+      "reason": "Old temporary files"
+    },
+    {
+      "id": "allow-rotated-logs",
+      "type": "path_glob",
+      "value": "/var/log/**/*.gz",
+      "min_age_days": 30,
+      "reason": "Old rotated compressed logs"
+    },
+    {
+      "id": "allow-journal-vacuum",
+      "type": "command_regex",
+      "value": "^journalctl\\s+--vacuum-time=([3-9][0-9]|[1-9][0-9]{2,})d$",
+      "reason": "Journal retention at least 30 days"
+    },
+    {
+      "id": "allow-apt-clean",
+      "type": "command_regex",
+      "value": "^apt\\s+(auto)?clean\\b",
+      "reason": "APT cache cleanup"
+    }
+  ],
+  "protected_services": [
+    "ssh",
+    "cron",
+    "systemd-resolved"
+  ],
+  "remote_cleanup": {
+    "allowed_roots": [
+      "/tmp",
+      "/var/tmp",
+      "/home"
+    ],
+    "denied_roots": [
+      "/etc",
+      "/usr",
+      "/bin",
+      "/sbin",
+      "/lib",
+      "/lib64",
+      "/var/lib",
+      "/root/.ssh"
+    ],
+    "default_preserve_days": 1
+  }
+}

@@ -12,7 +12,7 @@
  */
 
 import { createSeiriTool } from './src/mcp-server/tools/seiri.js';
-import { createSeitonTool } from './src/mcp-server/tools/seiton.js';
+import { createSeitonTool } from './src/mcp-server/tools/seiton-enhanced.js';
 import { createSeisoTool } from './src/mcp-server/tools/seiso.js';
 import { createSeiketsuTool } from './src/mcp-server/tools/seiketsu.js';
 import { createShitsukeTool } from './src/mcp-server/tools/shitsuke.js';
@@ -45,19 +45,12 @@ class FiveSDemo {
       // Аналіз непотрібних файлів
       await this.log('Виконуємо аналіз непотрібних файлів...');
       const analysis = await this.tools.seiri.execute({ 
-        action: 'analyze'
+        target: 'files',
+        path: '/tmp',
+        criteria: { age_days: 7, size_mb: 10 }
       });
       
-      await this.log(`Знайдено категорій файлів для очищення: ${Object.keys(analysis).length}`);
-      
-      // Безпечне очищення тимчасових файлів
-      await this.log('Виконуємо безпечне очищення тимчасових файлів...');
-      const cleanup = await this.tools.seiri.execute({
-        action: 'cleanup',
-        options: { category: 'temp', dryRun: false }
-      });
-      
-      await this.log(`Очищення завершено. Звільнено: ${cleanup.summary?.freed || 'N/A'}`);
+      await this.log(`Кандидатів на видалення: ${analysis.analysis.classification?.counts?.delete_candidate || 0}`);
       
     } catch (error) {
       await this.log(`❌ Помилка в Seiri: ${error.message}`);
@@ -72,19 +65,23 @@ class FiveSDemo {
       await this.log('Виконуємо організацію структури директорій...');
       const organize = await this.tools.seiton.execute({
         action: 'organize',
-        target: '/tmp'
+        scope: 'scripts',
+        target_path: '/tmp',
+        dry_run: true
       });
       
-      await this.log(`Організовано директорій: ${organize.organized?.length || 0}`);
+      await this.log(`Планових дій: ${organize.actions_taken?.length || 0}`);
       
       // Створення індексу файлів
       await this.log('Створюємо індекс важливих файлів...');
       const index = await this.tools.seiton.execute({
-        action: 'index',
-        target: '/etc'
+        action: 'workspace_tree',
+        target_path: '/tmp',
+        max_depth: 2,
+        max_files: 50
       });
       
-      await this.log(`Проіндексовано файлів: ${index.indexed?.length || 0}`);
+      await this.log(`Workspace tree: ${index.success ? 'OK' : 'N/A'}`);
       
     } catch (error) {
       await this.log(`❌ Помилка в Seiton: ${error.message}`);
@@ -98,19 +95,20 @@ class FiveSDemo {
       // Аналіз використання дискового простору
       await this.log('Аналізуємо використання дискового простору...');
       const analysis = await this.tools.seiso.execute({
-        action: 'analyze'
+        action: 'observe',
+        targets: ['temp']
       });
       
-      await this.log(`Загальне використання диску: ${analysis.disk?.usage || 'N/A'}`);
+      await this.log(`Seiso observe mode: ${analysis.mode}`);
       
-      // Очищення системи
-      await this.log('Виконуємо очищення системи...');
-      const cleanup = await this.tools.seiso.execute({
-        action: 'cleanup',
-        options: { level: 'standard' }
+      await this.log('Створюємо dry-run maintenance plan...');
+      const plan = await this.tools.seiso.execute({
+        action: 'plan',
+        targets: ['temp'],
+        preserve_days: 7
       });
       
-      await this.log(`Очищення завершено. Виконано операцій: ${cleanup.operations?.length || 0}`);
+      await this.log(`План створено: ${plan.id}, кандидатів: ${plan.summary.candidates}`);
       
     } catch (error) {
       await this.log(`❌ Помилка в Seiso: ${error.message}`);
@@ -124,18 +122,20 @@ class FiveSDemo {
       // Створення стандартних процедур
       await this.log('Створюємо стандартні процедури...');
       const standards = await this.tools.seiketsu.execute({
-        action: 'create-standards'
+        action: 'generate_policy',
+        domain: 'all'
       });
       
-      await this.log(`Створено стандартів: ${standards.created?.length || 0}`);
+      await this.log(`Policy sections: ${Object.keys(standards.standards || {}).length}`);
       
       // Перевірка відповідності стандартам
       await this.log('Перевіряємо відповідність стандартам...');
       const compliance = await this.tools.seiketsu.execute({
-        action: 'check-compliance'
+        action: 'validate_compliance',
+        domain: 'security'
       });
       
-      await this.log(`Загальна відповідність: ${compliance.overall?.score || 'N/A'}%`);
+      await this.log(`Compliance domains: ${Object.keys(compliance.compliance_status || {}).length}`);
       
     } catch (error) {
       await this.log(`❌ Помилка в Seiketsu: ${error.message}`);
@@ -223,13 +223,13 @@ class FiveSDemo {
           
           // Простий тест виконання
           if (name === 'seiri') {
-            await tool.execute({ action: 'analyze' });
+            await tool.execute({ target: 'files', path: '/tmp' });
           } else if (name === 'seiton') {
-            await tool.execute({ action: 'scan', target: '/tmp' });
+            await tool.execute({ action: 'analyze', scope: 'scripts', target_path: '/tmp' });
           } else if (name === 'seiso') {
-            await tool.execute({ action: 'analyze' });
+            await tool.execute({ action: 'observe', targets: ['temp'] });
           } else if (name === 'seiketsu') {
-            await tool.execute({ action: 'check-compliance' });
+            await tool.execute({ action: 'validate_compliance', domain: 'security' });
           } else if (name === 'shitsuke') {
             await tool.execute({ action: 'health' });
           }

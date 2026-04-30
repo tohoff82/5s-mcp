@@ -12,8 +12,8 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
-import { IntelligentWorkspaceTree } from '../utils/intelligent-workspace-tree.js';
-import { MemoryHelper } from '../utils/memory-helper.js';
+import { IntelligentWorkspaceTree } from '../../utils/intelligent-workspace-tree.js';
+import { MemoryHelper } from '../../utils/memory-helper.js';
 
 const execAsync = promisify(exec);
 
@@ -88,11 +88,15 @@ export function createSeitonTool(toolOrchestrator = null) {
             break;
             
           case 'organize':
-            results.actions_taken = await organizeSystem(scope, target_path, dry_run);
+            results.actions_taken = await organizeSystem(scope, target_path, true);
+            results.plan_only = true;
+            results.message = 'Production Seiton is inventory/index/config-registry only. Apply filesystem moves manually after review.';
             break;
             
           case 'standardize':
-            results.actions_taken = await standardizeStructure(scope, target_path, dry_run);
+            results.actions_taken = await standardizeStructure(scope, target_path, true);
+            results.plan_only = true;
+            results.message = 'Production Seiton standardization returns a plan only; no filesystem changes are executed.';
             break;
             
           case 'validate':
@@ -363,26 +367,6 @@ async function organizeSystem(scope, targetPath, dryRun) {
           description: action.description,
           command: action.command || 'N/A'
         });
-      } else {
-        // Виконуємо реальні дії
-        try {
-          if (action.command) {
-            await execAsync(action.command);
-          }
-          actions.push({
-            type: 'executed',
-            action: action.type,
-            description: action.description,
-            success: true
-          });
-        } catch (error) {
-          actions.push({
-            type: 'failed',
-            action: action.type,
-            description: action.description,
-            error: error.message
-          });
-        }
       }
     }
 
