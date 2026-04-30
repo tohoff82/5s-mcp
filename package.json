@@ -8,7 +8,7 @@
     "start": "node src/mcp-server/index.js",
     "dev": "node --watch src/mcp-server/index.js",
     "test": "node --test",
-    "check": "node --check src/mcp-server/index.js && node --check src/mcp-server/server.js && node --check src/maintenance-engine.js && node --check src/mcp-server/tools/seiri.js && node --check src/mcp-server/tools/seiso.js && node --check src/mcp-server/tools/seiketsu.js && node --check src/mcp-server/tools/safety-policy.js && node --check src/mcp-server/tools/cron-manager.js && node --check src/mcp-server/tools/remote-clean.js && node --check src/changelog/changelog-manager.js && node --check src/changelog/cli.js && node --check demo.js"
+    "check": "node --check src/mcp-server/index.js && node --check src/mcp-server/server.js && node --check src/maintenance-engine.js && node --check src/platform-capabilities.js && node --check src/mcp-server/tools/seiri.js && node --check src/mcp-server/tools/seiso.js && node --check src/mcp-server/tools/seiketsu.js && node --check src/mcp-server/tools/safety-policy.js && node --check src/mcp-server/tools/cron-manager.js && node --check src/mcp-server/tools/remote-clean.js && node --check src/changelog/changelog-manager.js && node --check src/changelog/cli.js && node --check demo.js"
   },
   "keywords": [
     "5S",

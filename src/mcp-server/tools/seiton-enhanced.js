@@ -14,6 +14,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { IntelligentWorkspaceTree } from '../../utils/intelligent-workspace-tree.js';
 import { MemoryHelper } from '../../utils/memory-helper.js';
+import { journalctlStatus, systemdStatus } from '../../platform-capabilities.js';
 
 const execAsync = promisify(exec);
 
@@ -250,7 +251,7 @@ async function analyzeLogStructure() {
     const { stdout: logFiles } = await execAsync('find /var/log -name "*.log" 2>/dev/null | head -30 || true');
     
     // Журнали systemd
-    const { stdout: journalInfo } = await execAsync('journalctl --list-boots | wc -l');
+    const journalInfo = await journalctlStatus(['--list-boots']);
 
     return {
       log_directories: {
@@ -261,7 +262,9 @@ async function analyzeLogStructure() {
         count: logFiles.split('\n').filter(line => line.trim()).length,
         files: logFiles.trim().split('\n').filter(line => line.trim())
       },
-      journal_boots: parseInt(journalInfo.trim())
+      journal_boots: journalInfo.status === 'ok' ? journalInfo.stdout.split('\n').filter(line => line.trim()).length : null,
+      journal_status: journalInfo.status,
+      journal_note: journalInfo.status === 'unsupported' ? journalInfo.reason : undefined
     };
 
   } catch (error) {
@@ -300,19 +303,21 @@ async function analyzeScriptStructure(targetPath) {
 async function analyzeServiceStructure() {
   try {
     // Сервіси systemd
-    const { stdout: allServices } = await execAsync('systemctl list-unit-files --type=service');
+    const allServices = await systemdStatus(['list-unit-files', '--type=service', '--no-pager']);
     const { stdout: customServices } = await execAsync('find /etc/systemd/system -name "*.service" 2>/dev/null || true');
     
     // Активні сервіси
-    const { stdout: activeServices } = await execAsync('systemctl list-units --type=service --state=active');
+    const activeServices = await systemdStatus(['list-units', '--type=service', '--state=active', '--no-pager']);
 
     return {
-      total_services: allServices.split('\n').filter(line => line.includes('.service')).length,
+      status: allServices.status === 'ok' || activeServices.status === 'ok' ? 'ok' : 'unsupported',
+      note: allServices.status === 'unsupported' ? allServices.reason : undefined,
+      total_services: allServices.status === 'ok' ? allServices.stdout.split('\n').filter(line => line.includes('.service')).length : null,
       custom_services: {
         count: customServices.split('\n').filter(line => line.trim()).length,
         files: customServices.trim().split('\n').filter(line => line.trim())
       },
-      active_services: activeServices.split('\n').filter(line => line.includes('.service')).length
+      active_services: activeServices.status === 'ok' ? activeServices.stdout.split('\n').filter(line => line.includes('.service')).length : null
     };
 
   } catch (error) {

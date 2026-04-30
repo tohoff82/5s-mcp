@@ -10,6 +10,7 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { SafetyPolicyManager } from '../../safety-policy.js';
+import { memorySnapshot, systemdStatus } from '../../platform-capabilities.js';
 
 const execAsync = promisify(exec);
 
@@ -221,17 +222,19 @@ async function auditSecurityStandards() {
     }
 
     // fail2ban
-    const { stdout: fail2banStatus } = await execAsync('systemctl is-active fail2ban 2>/dev/null || echo "inactive"');
+    const fail2banStatus = await systemdStatus(['is-active', 'fail2ban']);
     security.fail2ban = {
-      status: fail2banStatus.trim() === 'active' ? 'compliant' : 'non_compliant',
-      service_status: fail2banStatus.trim()
+      status: fail2banStatus.status === 'unsupported' ? 'unsupported' : fail2banStatus.stdout.trim() === 'active' ? 'compliant' : 'non_compliant',
+      service_status: fail2banStatus.status === 'ok' ? fail2banStatus.stdout.trim() : fail2banStatus.status,
+      note: fail2banStatus.status === 'unsupported' ? fail2banStatus.reason : undefined
     };
 
     // Автоматичні оновлення
-    const { stdout: unattendedUpgrades } = await execAsync('systemctl is-enabled unattended-upgrades 2>/dev/null || echo "disabled"');
+    const unattendedUpgrades = await systemdStatus(['is-enabled', 'unattended-upgrades']);
     security.updates = {
-      status: unattendedUpgrades.trim() === 'enabled' ? 'compliant' : 'non_compliant',
-      auto_updates: unattendedUpgrades.trim()
+      status: unattendedUpgrades.status === 'unsupported' ? 'unsupported' : unattendedUpgrades.stdout.trim() === 'enabled' ? 'compliant' : 'non_compliant',
+      auto_updates: unattendedUpgrades.status === 'ok' ? unattendedUpgrades.stdout.trim() : unattendedUpgrades.status,
+      note: unattendedUpgrades.status === 'unsupported' ? unattendedUpgrades.reason : undefined
     };
 
     return security;
@@ -250,22 +253,26 @@ async function auditPerformanceStandards() {
     };
 
     // Використання ресурсів
-    const { stdout: memInfo } = await execAsync('free -m');
+    const memInfo = await memorySnapshot();
     const { stdout: diskInfo } = await execAsync('df -h /');
     const { stdout: loadAvg } = await execAsync('uptime');
 
     performance.resources = {
-      memory: memInfo.trim(),
+      memory: memInfo.raw,
+      memory_status: memInfo.status,
+      memory_note: memInfo.note || memInfo.reason,
       disk: diskInfo.trim(),
       load: loadAvg.trim(),
       status: 'needs_analysis'
     };
 
     // Сервіси
-    const { stdout: servicesList } = await execAsync('systemctl list-units --type=service --state=running --no-pager | wc -l');
+    const servicesList = await systemdStatus(['list-units', '--type=service', '--state=running', '--no-pager']);
+    const runningCount = servicesList.status === 'ok' ? servicesList.stdout.split('\n').filter(line => line.includes('.service')).length : null;
     performance.services = {
-      running_count: parseInt(servicesList.trim()) - 1,
-      status: parseInt(servicesList.trim()) > 50 ? 'review_needed' : 'compliant'
+      running_count: runningCount,
+      status: servicesList.status === 'unsupported' ? 'unsupported' : runningCount > 50 ? 'review_needed' : 'compliant',
+      note: servicesList.status === 'unsupported' ? servicesList.reason : undefined
     };
 
     // Swappiness
@@ -300,10 +307,11 @@ async function auditMaintenanceStandards() {
     };
 
     // Logrotate
-    const { stdout: logrotateStatus } = await execAsync('systemctl is-active logrotate.timer 2>/dev/null || echo "inactive"');
+    const logrotateStatus = await systemdStatus(['is-active', 'logrotate.timer']);
     maintenance.cleaning = {
-      logrotate_active: logrotateStatus.trim() === 'active',
-      status: logrotateStatus.trim() === 'active' ? 'compliant' : 'non_compliant'
+      logrotate_active: logrotateStatus.status === 'ok' ? logrotateStatus.stdout.trim() === 'active' : null,
+      status: logrotateStatus.status === 'unsupported' ? 'unsupported' : logrotateStatus.stdout.trim() === 'active' ? 'compliant' : 'non_compliant',
+      note: logrotateStatus.status === 'unsupported' ? logrotateStatus.reason : undefined
     };
 
     return maintenance;
@@ -347,11 +355,12 @@ async function auditMonitoringStandards() {
     };
 
     // Системні метрики
-    const { stdout: systemdJournal } = await execAsync('systemctl is-active systemd-journald 2>/dev/null || echo "inactive"');
+    const systemdJournal = await systemdStatus(['is-active', 'systemd-journald']);
     
     monitoring.system_monitoring = {
-      journal_active: systemdJournal.trim() === 'active',
-      status: systemdJournal.trim() === 'active' ? 'basic' : 'insufficient'
+      journal_active: systemdJournal.status === 'ok' ? systemdJournal.stdout.trim() === 'active' : null,
+      status: systemdJournal.status === 'unsupported' ? 'unsupported' : systemdJournal.stdout.trim() === 'active' ? 'basic' : 'insufficient',
+      note: systemdJournal.status === 'unsupported' ? systemdJournal.reason : undefined
     };
 
     return monitoring;

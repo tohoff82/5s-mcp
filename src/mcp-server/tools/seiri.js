@@ -8,6 +8,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { SafetyPolicyManager } from '../../safety-policy.js';
+import { journalctlStatus, systemdStatus } from '../../platform-capabilities.js';
 
 const execAsync = promisify(exec);
 
@@ -226,17 +227,19 @@ function isServiceOrSourceArtifact(filePath) {
 async function analyzeProcesses() {
   try {
     // Поточні процеси
-    const { stdout: processesOutput } = await execAsync('ps aux --sort=-%cpu | head -20');
+    const { stdout: processesOutput } = await execAsync('{ ps aux --sort=-%cpu 2>/dev/null || ps aux; } | head -20');
     
     // Сервіси systemd
-    const { stdout: servicesOutput } = await execAsync('systemctl list-units --type=service --state=running');
+    const services = await systemdStatus(['list-units', '--type=service', '--state=running', '--no-pager']);
     
     // Мертві процеси
     const { stdout: zombieOutput } = await execAsync('ps aux | grep -E "(defunct|<zombie>)" | grep -v grep || echo "No zombie processes"');
 
     return {
       top_processes: processesOutput.trim(),
-      active_services: servicesOutput.trim(),
+      active_services: services.status === 'ok' ? services.stdout.trim() : null,
+      active_services_status: services.status,
+      active_services_note: services.status === 'unsupported' ? services.reason : undefined,
       zombie_processes: zombieOutput.trim(),
       process_count: processesOutput.split('\n').length - 1
     };
@@ -275,7 +278,7 @@ async function analyzePackages() {
 async function analyzeLogs() {
   try {
     // Розмір журналів systemd
-    const { stdout: journalSize } = await execAsync('journalctl --disk-usage');
+    const journalSize = await journalctlStatus(['--disk-usage']);
     
     // Старі логи
     const { stdout: oldLogs } = await execAsync('find /var/log -name "*.log*" -mtime +7 -exec ls -lh {} + 2>/dev/null || true');
@@ -284,7 +287,9 @@ async function analyzeLogs() {
     const { stdout: logrotateStatus } = await execAsync('logrotate --debug /etc/logrotate.conf 2>&1 | head -20 || true');
 
     return {
-      journal_disk_usage: journalSize.trim(),
+      journal_disk_usage: journalSize.status === 'ok' ? journalSize.stdout.trim() : null,
+      journal_status: journalSize.status,
+      journal_note: journalSize.status === 'unsupported' ? journalSize.reason : undefined,
       old_log_files: {
         count: oldLogs.split('\n').filter(line => line.trim()).length,
         files: oldLogs.trim().split('\n').filter(line => line.trim()).slice(0, 10)
