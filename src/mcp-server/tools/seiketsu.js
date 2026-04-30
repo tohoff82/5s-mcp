@@ -10,7 +10,7 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 import { SafetyPolicyManager } from '../../safety-policy.js';
-import { memorySnapshot, systemdStatus } from '../../platform-capabilities.js';
+import { memorySnapshot, optionalExec, systemdStatus } from '../../platform-capabilities.js';
 
 const execAsync = promisify(exec);
 
@@ -557,7 +557,17 @@ async function validateCompliance(domain, standardLevel) {
     for (const [standard, config] of Object.entries(categoryStandards)) {
       try {
         if (config.check_command) {
-          const { stdout } = await execAsync(config.check_command);
+          const result = await runComplianceCheck(config.check_command);
+          if (result.status === 'unsupported') {
+            compliance[category][standard] = {
+              requirement: config.requirement,
+              status: 'unsupported',
+              reason: result.reason,
+              compliant: null
+            };
+            continue;
+          }
+          const stdout = result.stdout || '';
           compliance[category][standard] = {
             requirement: config.requirement,
             actual: stdout.trim(),
@@ -572,14 +582,27 @@ async function validateCompliance(domain, standardLevel) {
       } catch (error) {
         compliance[category][standard] = {
           requirement: config.requirement,
+          status: 'error',
           error: error.message,
-          compliant: false
+          compliant: null
         };
       }
     }
   }
 
   return compliance;
+}
+
+async function runComplianceCheck(command) {
+  if (/^systemctl\b/.test(command)) {
+    const args = command.split(/\s+/).slice(1).filter(token => !token.includes('|'));
+    return await systemdStatus(args);
+  }
+  if (command.includes('/etc/security/limits.conf') && process.platform !== 'linux') {
+    return { status: 'unsupported', stdout: '', stderr: '', reason: '/etc/security/limits.conf is Linux-specific' };
+  }
+  const result = await optionalExec('sh', ['-lc', command]);
+  return result.status === 'error' ? { ...result, status: 'unsupported', reason: result.stderr || result.error } : result;
 }
 
 function evaluateCompliance(standard, actual, config) {

@@ -1,6 +1,7 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { SafetyPolicyManager } from '../../safety-policy.js';
+import { memorySnapshot } from '../../platform-capabilities.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -148,13 +149,23 @@ async function diskUsage(targetPath) {
 }
 
 async function memoryUsage() {
-  const result = await safeExec('free', ['-m']);
-  const line = (result.stdout || '').split('\n').find(item => item.startsWith('Mem:')) || '';
+  const snapshot = await memorySnapshot();
+  const line = (snapshot.raw || '').split('\n').find(item => item.startsWith('Mem:')) || '';
   const parts = line.split(/\s+/);
   const total = Number(parts[1]) || 0;
   const used = Number(parts[2]) || 0;
-  const percent = total > 0 ? Math.round((used / total) * 1000) / 10 : 0;
-  return { percent, total_mb: total, used_mb: used };
+  if (total <= 0) {
+    return {
+      status: snapshot.status === 'ok' ? 'unsupported' : snapshot.status,
+      source: snapshot.source,
+      percent: null,
+      total_mb: null,
+      used_mb: null,
+      note: snapshot.note || snapshot.reason
+    };
+  }
+  const percent = Math.round((used / total) * 1000) / 10;
+  return { status: 'ok', source: snapshot.source, percent, total_mb: total, used_mb: used };
 }
 
 async function safeExec(command, args) {

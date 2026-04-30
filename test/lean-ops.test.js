@@ -9,6 +9,7 @@ test('lean ops returns andon status', async () => {
   assert.equal(result.action, 'andon_status');
   assert.ok(['green', 'yellow', 'red'].includes(result.state));
   assert.equal(typeof result.summary.disk_percent, 'number');
+  assert.ok(result.summary.memory_percent === null || typeof result.summary.memory_percent === 'number');
 });
 
 test('jidoka check exposes stop automation flag', async () => {
