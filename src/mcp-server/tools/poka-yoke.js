@@ -30,30 +30,37 @@ export function createPokaYokeTool(options = {}) {
         max_files: {
           type: 'number',
           default: 100
+        },
+        profile: {
+          type: 'string',
+          enum: ['repo', 'production', 'docs', 'tests'],
+          default: 'repo'
         }
       },
       required: ['action']
     },
 
     async execute(args) {
-      const { action, target_path = '.', max_files = 100 } = args;
+      const { action, target_path = '.', max_files = 100, profile = 'repo' } = args;
       const targetPath = path.resolve(target_path);
 
       switch (action) {
         case 'scan':
-          return await scanForRisks(targetPath, max_files, policy);
+          return await scanForRisks(targetPath, max_files, policy, profile);
         case 'suggest': {
-          const scan = await scanForRisks(targetPath, max_files, policy);
+          const scan = await scanForRisks(targetPath, max_files, policy, profile);
           return { ...scan, action: 'suggest', suggestions: buildSuggestions(scan.findings) };
         }
         case 'validate': {
-          const scan = await scanForRisks(targetPath, max_files, policy);
+          const scan = await scanForRisks(targetPath, max_files, policy, profile);
+          const highFindings = scan.findings.filter(item => item.severity === 'high');
           return {
             timestamp: new Date().toISOString(),
             action: 'validate',
             target_path: targetPath,
-            passed: scan.findings.filter(item => item.severity === 'high').length === 0,
-            high_findings: scan.findings.filter(item => item.severity === 'high').length,
+            profile,
+            passed: highFindings.length === 0,
+            high_findings: highFindings.length,
             findings: scan.findings
           };
         }
@@ -64,7 +71,7 @@ export function createPokaYokeTool(options = {}) {
   };
 }
 
-async function scanForRisks(targetPath, maxFiles, policy) {
+async function scanForRisks(targetPath, maxFiles, policy, profile) {
   const verdict = await policy.evaluateOperation({
     command: `read ${targetPath}`,
     paths: [targetPath],
@@ -80,17 +87,22 @@ async function scanForRisks(targetPath, maxFiles, policy) {
   for (const file of files) {
     const content = await fs.readFile(file, 'utf8').catch(() => '');
     const lines = content.split('\n');
+    const fencedLines = markdownFenceLines(file, lines);
     lines.forEach((line, index) => {
       for (const pattern of RISKY_PATTERNS) {
         if (pattern.regex.test(line)) {
+          const context = findingContext(file, index + 1, fencedLines, targetPath, profile);
+          const severity = effectiveSeverity(pattern.severity, context, profile);
           findings.push({
             id: `${pattern.id}-${findings.length + 1}`,
             rule: pattern.id,
-            severity: pattern.severity,
+            severity,
+            original_severity: pattern.severity,
+            context,
             file,
             line: index + 1,
             message: pattern.message,
-            approval_level: approvalForSeverity(pattern.severity)
+            approval_level: approvalForSeverity(severity)
           });
         }
       }
@@ -101,6 +113,7 @@ async function scanForRisks(targetPath, maxFiles, policy) {
     timestamp: new Date().toISOString(),
     action: 'scan',
     target_path: targetPath,
+    profile,
     files_scanned: files.length,
     findings
   };
@@ -142,8 +155,38 @@ function approvalForSeverity(severity) {
   return {
     high: 'P3_HIGH',
     medium: 'P2_MEDIUM',
-    low: 'P1_LOW'
+    low: 'P1_LOW',
+    informational: 'P0_SAFE'
   }[severity] || 'P1_LOW';
+}
+
+function markdownFenceLines(file, lines) {
+  if (!file.endsWith('.md')) return new Set();
+  const fenced = new Set();
+  let inFence = false;
+  lines.forEach((line, index) => {
+    if (/^\s*```/.test(line)) {
+      inFence = !inFence;
+      fenced.add(index + 1);
+      return;
+    }
+    if (inFence) fenced.add(index + 1);
+  });
+  return fenced;
+}
+
+function findingContext(file, line, fencedLines, targetPath, profile) {
+  const relative = path.relative(targetPath, file).replace(/\\/g, '/');
+  if (profile === 'docs' || relative.startsWith('docs/') || fencedLines.has(line)) return 'docs_example';
+  if (profile === 'tests' || relative.startsWith('test/') || relative.startsWith('tests/')) return 'test';
+  return 'source';
+}
+
+function effectiveSeverity(severity, context, profile) {
+  if (profile === 'production') return severity;
+  if (context === 'docs_example') return 'informational';
+  if (context === 'test' && severity === 'high') return 'low';
+  return severity;
 }
 
 async function listTextFiles(root, limit) {

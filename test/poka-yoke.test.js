@@ -43,3 +43,31 @@ test('poka-yoke validate fails when high risk findings exist', async () => {
 
   await rm(tmp, { recursive: true, force: true });
 });
+
+test('poka-yoke downgrades markdown fenced examples in repo profile', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), '5s-poka-'));
+  await writeFile(path.join(tmp, 'README.md'), '```bash\nrm -rf /tmp/example\n```\n');
+  const tool = createPokaYokeTool();
+
+  const result = await tool.execute({ action: 'validate', target_path: tmp });
+
+  assert.equal(result.passed, true);
+  assert.equal(result.high_findings, 0);
+  assert.equal(result.findings[0].context, 'docs_example');
+  assert.equal(result.findings[0].severity, 'informational');
+
+  await rm(tmp, { recursive: true, force: true });
+});
+
+test('poka-yoke production profile keeps fenced examples strict', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), '5s-poka-'));
+  await writeFile(path.join(tmp, 'README.md'), '```bash\nrm -rf /tmp/example\n```\n');
+  const tool = createPokaYokeTool();
+
+  const result = await tool.execute({ action: 'validate', target_path: tmp, profile: 'production' });
+
+  assert.equal(result.passed, false);
+  assert.equal(result.high_findings, 1);
+
+  await rm(tmp, { recursive: true, force: true });
+});
