@@ -67,8 +67,10 @@ export function createSeisoTool() {
 
       switch (action) {
         case 'observe':
-        case 'analyze':
           return await engine.observe(targets, { preserve_days, aggressive_level });
+
+        case 'analyze':
+          return await analyzeCleanupReadiness(engine, targets, { preserve_days, aggressive_level });
 
         case 'plan':
           return await engine.createPlan(targets, { preserve_days, aggressive_level });
@@ -90,6 +92,33 @@ export function createSeisoTool() {
           throw new Error(`Unknown Seiso action: ${action}`);
       }
     }
+  };
+}
+
+async function analyzeCleanupReadiness(engine, targets, options) {
+  const [observation, plan] = await Promise.all([
+    engine.observe(targets, options),
+    engine.createPlan(targets, options)
+  ]);
+
+  return {
+    timestamp: new Date().toISOString(),
+    mode: 'analyze',
+    targets: observation.targets,
+    preserve_days: options.preserve_days,
+    observations: observation.observations,
+    cleanup_summary: plan.summary,
+    candidate_operations: plan.operations.map(operation => ({
+      id: operation.id,
+      kind: operation.kind,
+      type: operation.type,
+      status: operation.status || 'candidate',
+      risk_level: operation.verdict?.risk_level,
+      allowed_without_approval: operation.verdict?.allowed === true,
+      manifest_items: operation.manifest?.length || 0,
+      estimated_bytes: (operation.manifest || []).reduce((sum, item) => sum + (item.size_bytes || 0), 0)
+    })),
+    next_step: 'Use action=plan to persist a maintenance plan, then stage and apply with approval.'
   };
 }
 

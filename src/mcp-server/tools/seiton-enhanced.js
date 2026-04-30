@@ -17,6 +17,7 @@ import { MemoryHelper } from '../../utils/memory-helper.js';
 import { journalctlStatus, systemdStatus } from '../../platform-capabilities.js';
 
 const execAsync = promisify(exec);
+const PRUNED_DIRS = ['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.cache'];
 
 export function createSeitonTool(toolOrchestrator = null) {
   return {
@@ -211,7 +212,7 @@ async function analyzeConfigStructure(targetPath) {
   try {
     // Конфігураційні файли
     const { stdout: configFiles } = await execAsync(
-      `find "${targetPath}" -name "*.conf" -o -name "*.cfg" -o -name "*.config" -o -name "*.json" -o -name "*.yaml" -o -name "*.yml" 2>/dev/null || true`
+      `find ${shellQuote(targetPath)} ${findPruneExpression()} -type f \\( -name "*.conf" -o -name "*.cfg" -o -name "*.config" -o -name "*.json" -o -name "*.yaml" -o -name "*.yml" \\) 2>/dev/null | head -300 || true`
     );
 
     // Системні конфігурації
@@ -221,7 +222,7 @@ async function analyzeConfigStructure(targetPath) {
 
     // Dotfiles
     const { stdout: dotfiles } = await execAsync(
-      `find "${targetPath}" -maxdepth 2 -name ".*" -type f 2>/dev/null || true`
+      `find ${shellQuote(targetPath)} -maxdepth 2 ${findPruneExpression()} -name ".*" -type f 2>/dev/null | head -100 || true`
     );
 
     return {
@@ -276,12 +277,12 @@ async function analyzeScriptStructure(targetPath) {
   try {
     // Скрипти
     const { stdout: scripts } = await execAsync(
-      `find "${targetPath}" -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.pl" 2>/dev/null || true`
+      `find ${shellQuote(targetPath)} ${findPruneExpression()} -type f \\( -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.pl" \\) 2>/dev/null | head -300 || true`
     );
 
     // Виконувані файли
     const { stdout: executables } = await execAsync(
-      `find "${targetPath}" -type f -executable 2>/dev/null || true`
+      `find ${shellQuote(targetPath)} ${findPruneExpression()} -type f -executable 2>/dev/null | head -200 || true`
     );
 
     return {
@@ -329,7 +330,7 @@ async function analyzeNamingConsistency(targetPath) {
   try {
     // Аналіз patterns найменувань
     const { stdout: fileList } = await execAsync(
-      `find "${targetPath}" -maxdepth 3 -type f -exec basename {} \\; 2>/dev/null || true`
+      `find ${shellQuote(targetPath)} -maxdepth 3 ${findPruneExpression()} -type f -exec basename {} \\; 2>/dev/null | head -1000 || true`
     );
 
     const files = fileList.trim().split('\n').filter(line => line.trim());
@@ -343,7 +344,7 @@ async function analyzeNamingConsistency(targetPath) {
     };
 
     const total = files.length;
-    const consistency_score = Math.max(...Object.values(patterns)) / total * 100;
+    const consistency_score = total > 0 ? Math.max(...Object.values(patterns)) / total * 100 : 100;
 
     return {
       total_files_analyzed: total,
@@ -523,4 +524,12 @@ async function standardizeStructure(scope, targetPath, dryRun) {
 async function validateOrganization(scope, targetPath) {
   // Валідація поточного стану організації
   return await analyzeSeitonState(scope, targetPath);
+}
+
+function findPruneExpression() {
+  return `\\( ${PRUNED_DIRS.map(dir => `-name ${shellQuote(dir)}`).join(' -o ')} \\) -prune -o`;
+}
+
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, "'\\''")}'`;
 }
