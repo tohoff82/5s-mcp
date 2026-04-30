@@ -175,3 +175,21 @@ Actions:
 - `suggest`: inspect repo/docs/tests/cleanup opportunities.
 - `track`: add an improvement initiative to the backlog.
 - `report`: summarize tracked initiatives.
+
+## `gemba_inspect`
+
+Read-only source inspection. It respects safety policy for target paths and redacts secret-like values from context output.
+
+```json
+{
+  "action": "context",
+  "target_path": ".",
+  "max_files": 20
+}
+```
+
+Actions:
+
+- `walk`: list file metadata.
+- `observe`: read disk/process/service state.
+- `context`: gather redacted previews from docs/config/source files.

@@ -19,6 +19,7 @@ import { createSafetyPolicyTool } from './tools/safety-policy.js';
 import { createCronManagerTool } from './tools/cron-manager.js';
 import { createRemoteCleanTool } from './tools/remote-clean.js';
 import { createKaizenTool } from './tools/kaizen.js';
+import { createGembaTool } from './tools/gemba.js';
 
 class FiveSMcpServer {
   constructor() {
@@ -111,6 +112,7 @@ class FiveSMcpServer {
       createCronManagerTool(),                     // Cron schedule management
       createRemoteCleanTool(),                     // Remote cleanup mode
       createKaizenTool(),                          // Kaizen continuous improvement
+      createGembaTool(),                           // Gemba read-only inspection
     ];
 
     tools.forEach(tool => {

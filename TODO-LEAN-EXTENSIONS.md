@@ -16,9 +16,9 @@ Requirements:
 
 ## Phase 2: Gemba
 
-- [ ] `gemba_walk`: inspect actual system state through read-only checks.
-- [ ] `gemba_observe`: watch service behavior and logs without mutation.
-- [ ] `gemba_context`: gather config and documentation context.
+- [x] `gemba_inspect` action `walk`: inspect actual file state through read-only checks.
+- [x] `gemba_inspect` action `observe`: watch service/process/disk state without mutation.
+- [x] `gemba_inspect` action `context`: gather redacted config and documentation context.
 
 Requirements:
 
