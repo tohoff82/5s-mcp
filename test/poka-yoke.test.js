@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { createPokaYokeTool } from '../src/mcp-server/tools/poka-yoke.js';
@@ -68,6 +68,23 @@ test('poka-yoke production profile keeps fenced examples strict', async () => {
 
   assert.equal(result.passed, false);
   assert.equal(result.high_findings, 1);
+
+  await rm(tmp, { recursive: true, force: true });
+});
+
+test('poka-yoke repo profile downgrades managed guard source', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), '5s-poka-'));
+  const guardDir = path.join(tmp, 'src', 'mcp-server', 'tools');
+  await mkdir(guardDir, { recursive: true });
+  await writeFile(path.join(guardDir, 'cron-manager.js'), 'if (/rm -rf/.test(command)) throw new Error("blocked");\n');
+  const tool = createPokaYokeTool();
+
+  const result = await tool.execute({ action: 'validate', target_path: tmp });
+
+  assert.equal(result.passed, true);
+  assert.equal(result.high_findings, 0);
+  assert.equal(result.findings[0].context, 'managed_guard');
+  assert.equal(result.findings[0].severity, 'medium');
 
   await rm(tmp, { recursive: true, force: true });
 });

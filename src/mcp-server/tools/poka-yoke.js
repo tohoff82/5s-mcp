@@ -179,6 +179,7 @@ function findingContext(file, line, fencedLines, targetPath, profile) {
   const relative = path.relative(targetPath, file).replace(/\\/g, '/');
   if (profile === 'docs' || relative.startsWith('docs/') || fencedLines.has(line)) return 'docs_example';
   if (profile === 'tests' || relative.startsWith('test/') || relative.startsWith('tests/')) return 'test';
+  if (isManagedGuardFile(relative)) return 'managed_guard';
   return 'source';
 }
 
@@ -186,7 +187,14 @@ function effectiveSeverity(severity, context, profile) {
   if (profile === 'production') return severity;
   if (context === 'docs_example') return 'informational';
   if (context === 'test' && severity === 'high') return 'low';
+  if (context === 'managed_guard' && severity === 'high') return 'medium';
   return severity;
+}
+
+function isManagedGuardFile(relativePath) {
+  return relativePath === 'src/mcp-server/tools/cron-manager.js'
+    || relativePath === 'src/mcp-server/tools/poka-yoke.js'
+    || relativePath === 'install.sh';
 }
 
 async function listTextFiles(root, limit) {
