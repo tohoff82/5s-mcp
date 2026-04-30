@@ -58,6 +58,7 @@ export class MaintenanceExecutionEngine {
       operations: [],
       summary: {
         candidates: 0,
+        no_candidates: 0,
         runnable: 0,
         blocked: 0,
         estimated_bytes: 0
@@ -86,8 +87,9 @@ export class MaintenanceExecutionEngine {
     }
 
     plan.summary.candidates = plan.operations.length;
-    plan.summary.runnable = plan.operations.filter(operation => operation.verdict.allowed).length;
-    plan.summary.blocked = plan.operations.filter(operation => !operation.verdict.allowed).length;
+    plan.summary.no_candidates = plan.operations.filter(operation => operation.status === 'no_candidates').length;
+    plan.summary.runnable = plan.operations.filter(operation => operation.kind !== 'noop' && operation.verdict.allowed).length;
+    plan.summary.blocked = plan.operations.filter(operation => operation.kind !== 'noop' && !operation.verdict.allowed).length;
     plan.summary.estimated_bytes = plan.manifest.reduce((sum, item) => sum + (item.size_bytes || 0), 0);
 
     await this.savePlan(plan);
@@ -137,7 +139,9 @@ export class MaintenanceExecutionEngine {
         continue;
       }
 
-      if (operation.kind === 'file_remove') {
+      if (operation.kind === 'noop') {
+        results.push({ id: operation.id, skipped: true, reason: operation.status || 'No candidates' });
+      } else if (operation.kind === 'file_remove') {
         results.push(...await this.applyFileOperation(operation));
       } else if (operation.kind === 'command') {
         results.push(await this.applyCommandOperation(operation));
@@ -178,6 +182,20 @@ export class MaintenanceExecutionEngine {
 
   async planFileRemoval(type, root, preserveDays, namePatterns) {
     const candidates = await this.findFileCandidates(root, preserveDays, namePatterns);
+    if (candidates.length === 0) {
+      return {
+        id: `${type}-${crypto.randomBytes(3).toString('hex')}`,
+        kind: 'noop',
+        type,
+        status: 'no_candidates',
+        description: `No ${type} candidates under ${root} older than ${preserveDays} days`,
+        command: `manifest-remove ${type}`,
+        paths: [],
+        destructive: false,
+        manifest: []
+      };
+    }
+
     return {
       id: `${type}-${crypto.randomBytes(3).toString('hex')}`,
       kind: 'file_remove',

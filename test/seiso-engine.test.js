@@ -23,3 +23,18 @@ test('maintenance engine creates, stages, and approval-gates cleanup plans', asy
 
   await rm(tmp, { recursive: true, force: true });
 });
+
+test('maintenance engine marks empty file cleanup as noop', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), '5s-engine-'));
+  const plansDir = path.join(tmp, 'plans');
+  const backupDir = path.join(tmp, 'backup');
+  const engine = new MaintenanceExecutionEngine({ plansDir, backupDir });
+
+  const plan = await engine.createPlan(['temp'], { preserve_days: 36500 });
+
+  assert.ok(plan.operations.some(operation => operation.kind === 'noop'));
+  assert.equal(plan.summary.no_candidates >= 1, true);
+  assert.equal(plan.operations.find(operation => operation.kind === 'noop').destructive, false);
+
+  await rm(tmp, { recursive: true, force: true });
+});
