@@ -48,7 +48,7 @@ Default jobs are read-only:
 - daily health check
 - weekly audit
 
-The tool refuses destructive cron commands such as `rm`, `find ... -delete`, `autoremove`, `purge`, `drop_caches`, `shutdown`, and `reboot`. Destructive maintenance must go through staged plans.
+The tool refuses destructive cron command classes: file removal, package removal, kernel cache mutation, host shutdown, and host reboot. Destructive maintenance must go through staged plans.
 
 ### `5s_remote_clean`
 

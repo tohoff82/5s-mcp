@@ -1,87 +1,45 @@
-# Contributing to 5S MCP Server
+# Contributing
 
-Дякуємо за інтерес до вдосконалення 5S MCP Server! 🙏
-
-## 🚀 Як почати
-
-1. **Fork** репозиторій
-2. **Clone** ваш fork:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/5s-mcp.git
-   cd 5s-mcp
-   ```
-3. **Install** залежності:
-   ```bash
-   npm install
-   ```
-4. **Create** feature branch:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-## 📝 Типи контрибуцій
-
-### 🐛 Bug Reports
-
-Відкрийте Issue з:
-- Описом проблеми
-- Кроками для відтворення
-- Очікуваною та фактичною поведінкою
-- Версіями (Node.js, OS)
-
-### ✨ Feature Requests
-
-Відкрийте Issue з:
-- Описом функціоналу
-- Use case
-- Можливою імплементацією
-
-### 🔧 Pull Requests
-
-1. Переконайтесь, що код відповідає стилю проекту
-2. Додайте тести якщо це нова функціональність
-3. Оновіть документацію
-4. Опишіть зміни в PR description
-
-## 🏗️ Структура проекту
-
-```
-src/mcp-server/
-├── index.js        # Entry point
-├── server.js       # MCP Server
-└── tools/
-    ├── seiri.js    # 1S - Sort
-    ├── seiton.js   # 2S - Set in Order
-    ├── seiso.js    # 3S - Shine
-    ├── seiketsu.js # 4S - Standardize
-    └── shitsuke.js # 5S - Sustain
-```
-
-## 📋 Coding Guidelines
-
-- ES Modules (`import`/`export`)
-- Async/await для асинхронного коду
-- JSDoc коментарі для функцій
-- Descriptive variable names
-- Error handling з try/catch
-
-## 🧪 Testing
+## Development Setup
 
 ```bash
+npm install
+npm run check
 npm test
+node demo.js test
 ```
 
-## 📖 Документація
+## Safety Requirements
 
-При додаванні нових інструментів:
-1. Додайте JSDoc до функцій
-2. Оновіть README.md (API Reference)
-3. Додайте приклади використання
+Changes to cleanup behavior must preserve the production safety contract:
 
-## 💬 Питання?
+```text
+observe -> plan -> evaluate -> stage -> apply -> verify -> record
+```
 
-Відкрийте Issue або Discussion.
+Do not add direct delete pipelines or destructive cron jobs. Cleanup behavior belongs in `src/maintenance-engine.js` and must be covered by tests.
 
----
+## Project Layout
 
-**Дякуємо за ваш внесок! 整理整頓清掃清潔躾**
+```text
+src/
+  maintenance-engine.js
+  safety-policy.js
+  mcp-server/
+    index.js
+    server.js
+    tools/
+  changelog/
+config/
+docs/
+test/
+```
+
+## Pull Request Checklist
+
+- Code uses ES modules.
+- MCP stdio logs do not write to stdout.
+- New tools are registered in `src/mcp-server/server.js`.
+- Safety policy changes update `config/safety-policy.json` and tests.
+- Documentation is updated in `docs/`.
+- `npm run check`, `npm test`, and `npm audit --audit-level=high` pass.

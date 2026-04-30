@@ -1,58 +1,51 @@
-# 5S-MCP: Lean Methodology Extensions Roadmap
+# Lean Extensions Roadmap
 
-## Current State (v1.0)
-5 core tools implemented:
-- `sort` - Seiri (整理) - Identify unnecessary items
-- `set_in_order` - Seiton (整頓) - Organize and arrange
-- `shine` - Seiso (清掃) - Clean and maintain
-- `standardize` - Seiketsu (清潔) - Create standards
-- `sustain` - Shitsuke (躾) - Maintain discipline
+The current production surface is the 8-tool 5S MCP service documented in [docs/tools.md](docs/tools.md). Future Lean tools must build on the safety policy and maintenance engine.
 
-## Planned Extensions
+## Phase 1: Kaizen
 
-### Phase 1: Kaizen (改善) - Continuous Improvement
-- [ ] `kaizen_suggest` - Analyze code/system and suggest incremental improvements
-- [ ] `kaizen_track` - Track improvement initiatives over time
-- [ ] `kaizen_report` - Generate improvement metrics and progress reports
+- [ ] `kaizen_suggest`: suggest incremental improvements from audit and changelog history.
+- [ ] `kaizen_track`: track improvement initiatives over time.
+- [ ] `kaizen_report`: summarize improvement metrics.
 
-### Phase 2: Gemba (現場) - Go to the Source
-- [ ] `gemba_walk` - Deep inspection of actual system state (logs, metrics, errors)
-- [ ] `gemba_observe` - Watch system behavior in real-time
-- [ ] `gemba_interview` - Gather context from config, comments, documentation
+Requirements:
 
-### Phase 3: Poka-Yoke (ポカヨケ) - Error Prevention
-- [ ] `poka_yoke_scan` - Identify potential error points in code/config
-- [ ] `poka_yoke_suggest` - Recommend error-prevention mechanisms
-- [ ] `poka_yoke_validate` - Verify error-prevention measures are in place
+- read-only by default
+- no direct cleanup actions
+- links recommendations to `Seiso` plans when cleanup is needed
 
-### Phase 4: Additional Lean Tools
-- [ ] `muda_detect` - Detect waste (7 wastes: defects, overproduction, waiting, etc.)
-- [ ] `jidoka_check` - Automation with human touch (quality at source)
-- [ ] `andon_status` - Visual status board for system health
+## Phase 2: Gemba
 
-## Integration Notes
+- [ ] `gemba_walk`: inspect actual system state through read-only checks.
+- [ ] `gemba_observe`: watch service behavior and logs without mutation.
+- [ ] `gemba_context`: gather config and documentation context.
 
-All new tools automatically appear in `skill_5s` meta-tool after adding to 5s-mcp.
+Requirements:
 
-Usage example (future):
-```
-skill_5s action=kaizen_suggest target=/root/ui-agent/services
-skill_5s action=gemba_walk service=ui-agent-claude
-skill_5s action=poka_yoke_scan path=/root/ui-agent/packages
-```
+- respect deny paths from `5s_safety_policy`
+- redact secrets from reports
 
-## Architecture
+## Phase 3: Poka-Yoke
 
-```
-5s-mcp (MCP Server)
-    ↓
-FiveSSkill (proxy in ui-agent)
-    ↓
-skill_5s (meta-tool in skills-meta-router.js)
-    ↓
-Claude API
-```
+- [ ] `poka_yoke_scan`: identify error-prone config or workflow patterns.
+- [ ] `poka_yoke_suggest`: recommend prevention mechanisms.
+- [ ] `poka_yoke_validate`: verify prevention measures.
 
----
-Created: 2026-01-20
-Last Updated: 2026-01-20
+Requirements:
+
+- suggested fixes must produce plans, not direct edits
+- high-risk suggestions require approval matrix mapping
+
+## Phase 4: Additional Lean Tools
+
+- [ ] `muda_detect`: detect waste in logs, queues, disk, or workflow.
+- [ ] `jidoka_check`: detect conditions that should stop automation.
+- [ ] `andon_status`: produce a status board for health and maintenance readiness.
+
+## Acceptance Criteria For New Tools
+
+- MCP schema documented in `docs/tools.md`.
+- Tests cover success, policy block, and invalid input.
+- No stdout diagnostic logging.
+- No destructive shell pipeline.
+- Changelog format supports the new procedure type or maps it to a current 5S category.

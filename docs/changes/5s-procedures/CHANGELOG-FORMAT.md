@@ -1,140 +1,66 @@
-# 📝 Формат 5S Changelog
+# 5S Changelog Format
 
-## Структура Зберігання
+Every entry should capture what changed, why it changed, how it was validated, and how it can be rolled back.
 
-### Актуальність: **3 місяці (квартал)**
-- Достатньо для аналізу трендів
-- Не перевантажує систему історією
-- Дозволяє бачити сезонні патерни
+## Required Cleanup Evidence
 
-### Директорії:
-```
-docs/changes/5s-procedures/
-├── 2026-Q1/                    # Архів кварталу
-│   ├── procedures/             # JSON записи процедур
-│   ├── reports/               # Markdown звіти
-│   └── analytics/             # Аналітичні дані
-├── 2026-Q2/                   # Наступний квартал
-└── current -> 2026-Q1/        # Символьне посилання на поточний
-```
+For `seiso` procedures:
 
-## 🗂️ Формати Файлів
+- `plan_id`
+- dry-run artifact path
+- backup reference
+- policy verdict summary
+- approval source
+- verification snapshot before and after apply
+- manifest item count
+- bytes removed from apply results
 
-### 1. JSON Запис Процедури
+## Minimal JSON Shape
+
 ```json
 {
-  "id": "5s_20260116_001",
-  "timestamp": "2026-01-16T18:45:00Z",
-  "type": "weekly_5s",
-  "phase": "sort", // sort, set_in_order, shine, standardize, sustain
-  "duration_minutes": 45,
-  "agent": "claude-sonnet-3.5",
-  "user_initiated": true,
-  "backup_created": "ui-agent-backup-20260116-1845.tar.gz",
-  "actions": [
-    {
-      "category": "log_cleanup",
-      "description": "Removed logs older than 30 days",
-      "files_affected": 23,
-      "space_freed_mb": 150,
-      "safety_check": "dry_run_completed"
-    }
-  ],
-  "results": {
-    "success": true,
-    "errors": [],
-    "warnings": ["Large nginx log files detected"],
-    "improvements": {
-      "disk_space_freed_mb": 150,
-      "files_organized": 23,
-      "standards_updated": 2
+  "procedure": {
+    "type": "seiso",
+    "name": "Staged cleanup plan",
+    "category": "maintenance"
+  },
+  "changes": {
+    "type": "optimize",
+    "what": "Created and applied a staged cleanup manifest",
+    "why": "Free safe reclaimable space",
+    "how": "seiso_clean_system observe -> plan -> stage -> apply"
+  },
+  "impact": {
+    "scope": "system",
+    "severity": "medium",
+    "performance_metrics": {
+      "space_freed_bytes": 0
     }
   },
-  "next_recommended": {
-    "date": "2026-01-23",
-    "focus": "set_in_order"
-  }
+  "technical": {
+    "files_modified": [],
+    "commands_executed": [
+      "seiso_clean_system action=plan",
+      "seiso_clean_system action=stage",
+      "seiso_clean_system action=apply approved=true"
+    ],
+    "services_affected": [],
+    "backup_location": "/backup/5s/<plan-id>.tar.gz",
+    "rollback_procedure": "restore from the staged backup archive",
+    "validation_steps": [
+      "npm test",
+      "post-apply service health check"
+    ]
+  },
+  "human_resources": {
+    "executor": "agent",
+    "skill_level_required": "intermediate"
+  },
+  "status": {
+    "current": "completed",
+    "completion_percentage": 100,
+    "maintenance_frequency": "weekly"
+  },
+  "tags": ["seiso", "staged-cleanup", "manifest"]
 }
 ```
-
-### 2. Markdown Звіт
-```markdown
-# 5S Weekly Report - 2026-01-16
-
-## 📊 Summary
-- **Phase**: Sort (整理)
-- **Duration**: 45 minutes
-- **Status**: ✅ Success
-- **Space Freed**: 150 MB
-
-## 🎯 Actions Performed
-- [x] Log cleanup (30+ days old)
-- [x] Temp files removal
-- [x] Package cache cleanup
-
-## ⚠️ Warnings
-- Large nginx log files detected
-- Consider log rotation optimization
-
-## 📈 Improvements
-- Freed 150 MB disk space
-- Organized 23 files
-- Updated 2 standards
-
-## 🔄 Next Steps
-- Focus on "Set in Order" phase next week
-- Consider nginx log rotation setup
-```
-
-### 3. MongoDB Collection Schema
-```javascript
-db.s5_procedures.insertOne({
-  _id: ObjectId(),
-  procedure_id: "5s_20260116_001",
-  timestamp: ISODate("2026-01-16T18:45:00Z"),
-  quarter: "2026-Q1",
-  week: 3,
-  phase: "sort",
-  metrics: {
-    duration_minutes: 45,
-    space_freed_mb: 150,
-    files_affected: 23,
-    errors_count: 0,
-    warnings_count: 1
-  },
-  tags: ["log_cleanup", "temp_files", "success"],
-  agent_version: "claude-sonnet-3.5"
-});
-```
-
-## 🔄 Процедура Ротації
-
-### Автоматична ротація кварталів:
-1. На початку нового кварталу
-2. Архівування попереднього кварталу
-3. Створення нової директорії
-4. Оновлення символьного посилання `current`
-5. Видалення кварталів старших за 1 рік
-
-### Backup старих даних:
-- Архівація у `/backup/5s-history/`
-- Збереження ключової статистики
-- Експорт у CSV для аналізу
-
-## 📊 Аналітичні Можливості
-
-### Запити які можна робити:
-- Ефективність по фазах 5S
-- Тренди звільнення дискового простору
-- Частота помилок по типам операцій
-- Продуктивність різних агентів
-- Сезонні патерни в обслуговуванні
-
-### Dashboard метрики:
-- Середній час виконання процедур
-- Відсоток успішних операцій
-- Загальний об'єм звільненого простору
-- TOP проблемних зон
-
----
-**Мета**: Забезпечити повну трейсабільність та постійне покращення 5S процедур

@@ -1,335 +1,129 @@
 # 5S MCP Server
 
-[![MCP](https://img.shields.io/badge/MCP-compatible-blue)](https://modelcontextprotocol.io)
-[![Node.js](https://img.shields.io/badge/Node.js-≥18.0.0-green)](https://nodejs.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Production-safe MCP server for applying the 5S methodology to server maintenance. The service is designed for agents: it analyzes system state, builds cleanup plans, enforces safety policy, manages cron schedules, and supports remote cleanup after agent work.
 
-**5S Methodology MCP Server** — реалізація Lean-методології 5S для управління серверами через Model Context Protocol (MCP).
+## Current Status
 
-## 🎯 Що таке 5S?
+- Runtime: Node.js 18+
+- Transport: MCP stdio
+- Branch model: `main` for production, `dev` for development
+- Safety model: plan-first, deny/allow policy, staged apply
+- Verification:
 
-5S — це японська методологія організації робочого місця, розроблена Toyota. Кожна "S" представляє крок:
+```bash
+npm run check
+npm test
+npm audit --audit-level=high
+```
 
-| Крок | Японською | Переклад | Опис |
-|------|-----------|----------|------|
-| **1S** | 整理 (Seiri) | Сортування | Визначити необхідне та непотрібне |
-| **2S** | 整頓 (Seiton) | Систематизація | Організувати все за логічною системою |
-| **3S** | 清掃 (Seiso) | Чистота | Очистити та підтримувати чистоту |
-| **4S** | 清潔 (Seiketsu) | Стандартизація | Створити стандарти та процедури |
-| **5S** | 躾 (Shitsuke) | Дисципліна | Підтримувати та вдосконалювати систему |
-
-## ✨ Можливості
-
-- 🔍 **Seiri (Sort)** — аналіз файлів, процесів, пакетів та логів
-- 📁 **Seiton (Set in Order)** — організація конфігурацій, логів, скриптів
-- 🧹 **Seiso (Shine)** — очищення кешу, логів, тимчасових файлів
-- 📋 **Seiketsu (Standardize)** — перевірка стандартів безпеки та продуктивності
-- ✅ **Shitsuke (Sustain)** — щотижневі аудити та автоматизація
-- 🛡️ **Safety Policy** — agent-managed deny/allow правила для production cleanup
-- 🕒 **Cron Manager** — керування cron без hardcoded server path
-- 🌐 **Remote Clean** — dry-run-first прибирання після роботи агента на remote серверах
-
-## 📦 Встановлення
-
-### Як standalone сервер
+## Install
 
 ```bash
 git clone https://github.com/tohoff82/5s-mcp.git
 cd 5s-mcp
 npm install
+```
+
+## Run
+
+```bash
 npm start
 ```
 
-### Як залежність
-
-```bash
-npm install github:tohoff82/5s-mcp
-```
-
-## ⚙️ Конфігурація
-
-### Claude Desktop
-
-Додайте до `claude_desktop_config.json`:
+MCP client config:
 
 ```json
 {
   "mcpServers": {
     "5s": {
       "command": "node",
-      "args": ["/path/to/5s-mcp/src/mcp-server/index.js"]
+      "args": ["/absolute/path/to/5s-mcp/src/mcp-server/index.js"]
     }
   }
 }
 ```
 
-### VS Code (Copilot)
+The server writes operational logs to stderr so stdout remains reserved for MCP protocol messages.
 
-Додайте до `.vscode/mcp.json`:
+## Tools
 
-```json
-{
-  "servers": {
-    "5s": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["/path/to/5s-mcp/src/mcp-server/index.js"]
-    }
-  }
-}
+| Tool | Purpose |
+| --- | --- |
+| `seiri_sort_analyze` | Classify files/processes/packages/logs as necessary, conditional, cleanup candidates, or forbidden. |
+| `seiton_organize_system` | Inventory, index, workspace tree, and organization plans. Production actions are plan-only. |
+| `seiso_clean_system` | Safe cleanup workflow: `observe -> plan -> stage -> apply`. |
+| `seiketsu_standardize_procedures` | Audit standards and generate formal safety/retention/backup policies. |
+| `5s-shitsuke` | Health checks, audits, metrics, reports, and schedule rendering. |
+| `5s_safety_policy` | Agent-managed deny/allow rules and operation risk evaluation. |
+| `5s_cron_manager` | Render, validate, install, read, and remove cron files without hardcoded server paths. |
+| `5s_remote_clean` | Evidence-driven remote cleanup after agent sessions. |
+
+See [docs/tools.md](docs/tools.md) for schemas and examples.
+
+## Safety Contract
+
+Cleanup is never a direct shell delete pipeline. The required flow is:
+
+```text
+observe -> plan -> policy evaluation -> stage -> approved apply -> verify -> record
 ```
 
-## 🛠️ API Reference
+Key rules:
 
-### `seiri_sort_analyze`
+- `Seiso` creates manifests before deleting anything.
+- `stage` writes a dry-run artifact and backup metadata.
+- `apply` requires `approved=true` and a staged `plan_id`.
+- deny/allow policy is stored in [config/safety-policy.json](config/safety-policy.json).
+- cron defaults are read-only health/audit jobs.
+- remote cleanup is limited to safe roots and is dry-run first.
 
-Аналіз та сортування для визначення необхідного і непотрібного.
+See [docs/operations.md](docs/operations.md) and [docs/safety.md](docs/safety.md).
 
-```json
-{
-  "target": "files|processes|packages|logs|all",
-  "path": "/root",
-  "criteria": {
-    "age_days": 30,
-    "size_mb": 10,
-    "include_hidden": false
-  }
-}
+## Demo
+
+```bash
+node demo.js test
+node demo.js seiso
 ```
 
-### `seiton_organize_system`
+The demo uses current MCP tool schemas and only creates cleanup plans; it does not apply destructive changes.
 
-Організація та систематизація компонентів системи.
+## Documentation
 
-```json
-{
-  "target": "configs|logs|scripts|services|all",
-  "action": "analyze|organize",
-  "options": {
-    "create_links": true,
-    "backup_first": true
-  }
-}
+- [docs/README.md](docs/README.md) - documentation map
+- [docs/architecture.md](docs/architecture.md) - runtime architecture
+- [docs/tools.md](docs/tools.md) - MCP tool reference
+- [docs/operations.md](docs/operations.md) - production workflows
+- [docs/safety.md](docs/safety.md) - safety policy and risk levels
+- [docs/remote-clean.md](docs/remote-clean.md) - remote cleanup mode
+- [docs/changelog.md](docs/changelog.md) - changelog storage and CLI
+- [docs/PRODUCTION-HARDENING.md](docs/PRODUCTION-HARDENING.md) - hardening checklist
+- [TODO-LEAN-EXTENSIONS.md](TODO-LEAN-EXTENSIONS.md) - roadmap
+
+## Repository Layout
+
+```text
+src/
+  maintenance-engine.js        # plan/stage/apply engine
+  safety-policy.js             # deny/allow policy manager
+  mcp-server/
+    index.js                   # stdio entrypoint
+    server.js                  # MCP tool registration
+    tools/                     # MCP tools
+  changelog/                   # file/Mongo changelog support
+config/
+  safety-policy.json           # production safety defaults
+docs/
+test/
 ```
 
-### `seiso_clean_system`
+## Development
 
-Очищення системи від непотрібних файлів.
-
-```json
-{
-  "target": "cache|logs|temp|packages|journal|all",
-  "action": "analyze|clean",
-  "options": {
-    "older_than_days": 7,
-    "dry_run": true,
-    "keep_last_n": 5
-  }
-}
+```bash
+npm install
+npm run check
+npm test
+node demo.js test
 ```
 
-### `seiketsu_standardize_procedures`
-
-Перевірка відповідності стандартам.
-
-```json
-{
-  "category": "security|performance|backup|all",
-  "action": "check|report",
-  "options": {
-    "fix_issues": false,
-    "severity_threshold": "warning"
-  }
-}
-```
-
-### `5s-shitsuke`
-
-Аудит дотримання 5S та автоматизація.
-
-```json
-{
-  "action": "weekly_audit|metrics|health_check|automation_status",
-  "options": {
-    "include_recommendations": true,
-    "compare_with_previous": true
-  }
-}
-```
-
-### `5s_safety_policy`
-
-Керування production deny/allow правилами та перевірка операцій перед виконанням.
-
-```json
-{
-  "action": "list|add_rule|remove_rule|evaluate|reset",
-  "kind": "deny|allow|all",
-  "operation": {
-    "command": "manifest-remove /tmp/agent-run",
-    "paths": ["/tmp/agent-run"],
-    "destructive": true,
-    "approved": false
-  }
-}
-```
-
-### `5s_cron_manager`
-
-Керування cron jobs без прив'язки до конкретного сервера.
-
-```json
-{
-  "action": "render|install|read|remove|validate",
-  "project_dir": "/opt/5s-mcp",
-  "cron_path": "/etc/cron.d/5s-methodology",
-  "dry_run": true
-}
-```
-
-### `5s_remote_clean`
-
-Remote cleanup mode: агент передає host, evidence своєї сесії, отримує план і тільки після approval може застосувати cleanup.
-
-```json
-{
-  "action": "analyze|plan|cleanup",
-  "host": "example.org",
-  "user": "root",
-  "paths_visited": ["/tmp/agent-run-123"],
-  "commands_executed": ["cd /tmp/agent-run-123 && npm test"],
-  "dry_run": true
-}
-```
-
-## 📊 Приклад виводу
-
-```json
-{
-  "timestamp": "2026-01-17T12:00:00Z",
-  "target": "all",
-  "analysis": {
-    "files": {
-      "total_scanned": 1250,
-      "large_files": 12,
-      "old_files": 45,
-      "potential_cleanup_mb": 850
-    },
-    "processes": {
-      "total": 89,
-      "zombie": 0,
-      "high_memory": 3
-    }
-  },
-  "recommendations": [
-    "Remove 45 files older than 30 days",
-    "Clear 850MB of large log files"
-  ]
-}
-```
-
-## 🏗️ Архітектура
-
-```
-5s-mcp/
-├── src/
-│   └── mcp-server/
-│       ├── index.js          # Entry point
-│       ├── server.js         # MCP Server implementation
-│       └── tools/
-│           ├── seiri.js      # 整理 - Sort/Identify
-│           ├── seiton.js     # 整頓 - Set in Order
-│           ├── seiso.js      # 清掃 - Shine/Clean
-│           ├── seiketsu.js   # 清潔 - Standardize
-│           └── shitsuke.js   # 躾 - Sustain
-├── config/                   # Configuration files
-├── docs/                     # Documentation
-└── 1-5-shitsuke/            # Methodology procedures
-```
-
-## 🔒 Безпека
-
-- Всі деструктивні операції мають `dry_run` режим за замовчуванням
-- Автоматичне створення бекапів перед змінами
-- Обмеження на критичні системні шляхи
-- Логування всіх операцій
-
-## 📚 Документація
-
-- [Architecture](docs/README.md)
-- [5S Methodology Guide](docs/maintenance/5s-methodology/README.md)
-- [Production Hardening](docs/PRODUCTION-HARDENING.md)
-- [Security Procedures](docs/security/current-state.md)
-
-## 🤝 Contributing
-
-1. Fork репозиторій
-2. Створіть feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit зміни (`git commit -m 'Add amazing feature'`)
-4. Push branch (`git push origin feature/amazing-feature`)
-5. Відкрийте Pull Request
-
-## 📄 Ліцензія
-
-MIT License - див. [LICENSE](LICENSE)
-
-## 🙏 Подяки
-
-- [Hiroyuki Hirano](https://en.wikipedia.org/wiki/5S_(methodology)) — автор методології 5S
-- [Model Context Protocol](https://modelcontextprotocol.io) — стандарт MCP
-- [Anthropic](https://anthropic.com) — MCP SDK
-
----
-
-**Made with 整理整頓清掃清潔躾 by [tohoff82](https://github.com/tohoff82)**
-
-## 🏗️ Deployment Architecture
-
-This server is part of the **UI-Agent MCP ecosystem** deployed on `138.201.190.221`.
-
-### Directory Structure
-
-```
-/opt/                          # Standalone MCP Servers (production)
-├── 5s-mcp/                    # 5S Methodology (Lean/Kaizen)
-├── memory-mcp/                # System Memory & Self-awareness
-├── rabbitmq-mcp/              # RabbitMQ Management
-└── ubuntu-mcp/                # Linux System Tools (308 tools)
-
-/root/
-└── ui-agent/                  # Main Application
-    ├── services/              # Microservices
-    │   ├── telegram-gateway/  # Telegram bot interface
-    │   ├── claude-service/    # AI orchestration
-    │   ├── tools-executor/    # Tool execution engine
-    │   └── claude-router-mcp/ # Meta-tool routing
-    └── packages/              # Skills (MCP proxies)
-        ├── skills-5s/         # → /opt/5s-mcp
-        ├── skills-memory/     # → /opt/memory-mcp
-        ├── skills-rabbitmq/   # → /opt/rabbitmq-mcp
-        └── skills-rebuild/    # Local build tools
-```
-
-### Integration Flow
-
-```
-Telegram User
-    ↓
-ui-agent/services/telegram-gateway
-    ↓ RabbitMQ
-ui-agent/services/claude-service
-    ↓ skill_* meta-tools
-ui-agent/services/tools-executor
-    ↓ MCP Protocol
-/opt/*-mcp servers
-```
-
-### Related Repositories
-
-| Repository | Location | GitHub |
-|------------|----------|--------|
-| ui-agent | /root/ui-agent | github.com/tohoff82/ui-agent |
-| 5s-mcp | /opt/5s-mcp | github.com/tohoff82/5s-mcp |
-| memory-mcp | /opt/memory-mcp | github.com/tohoff82/memory-mcp |
-| rabbitmq-mcp | /opt/rabbitmq-mcp | github.com/tohoff82/rabbitMQ-mcp |
-| ubuntu-mcp | /opt/ubuntu-mcp | github.com/tohoff82/ubuntu-mcp |
+Before changing cleanup behavior, add or update tests for policy evaluation, plan generation, staging, and approval gates.
