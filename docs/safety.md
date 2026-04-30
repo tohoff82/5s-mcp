@@ -96,3 +96,5 @@ Lean extension tools do not bypass the safety contract:
 - `gemba_inspect` is read-only and blocks denied target paths.
 - `poka_yoke_guard` reports prevention findings and approval levels, but does not edit files.
 - `lean_ops` observes disk, memory, and waste signals; any cleanup follow-up still requires Seiso plan/stage/apply.
+
+`poka_yoke_guard` supports `repo`, `production`, `docs`, and `tests` profiles. Use `production` for deployable automation; use `repo` for repository checks so fenced documentation examples and test fixtures are downgraded instead of treated as live destructive commands.

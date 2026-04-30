@@ -2,6 +2,8 @@
 
 `5s_remote_clean` helps agents clean up after their work on remote servers. It is evidence-driven: the agent supplies paths visited and commands executed, then the tool infers candidates and builds a plan.
 
+Remote cleanup is manifest-based. A plan may inspect a concrete touched directory, but apply removes only manifest file items. It does not remove broad roots such as `/tmp`, `/var/tmp`, `/home`, or `/home/user`.
+
 ## Safe Roots
 
 Remote cleanup candidates are limited to:
@@ -9,6 +11,8 @@ Remote cleanup candidates are limited to:
 - `/tmp`
 - `/var/tmp`
 - `/home`
+
+The candidate must be below these roots, for example `/tmp/agent-run-123`, `/var/tmp/build-abc`, or `/home/deploy/worktree`. The root directories themselves are not valid cleanup targets.
 
 Denied roots include:
 

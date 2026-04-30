@@ -50,6 +50,8 @@ MCP protocol messages use stdout. Any diagnostic startup logs must go to stderr.
 | Backup metadata/archive root | `/backup/5s` |
 | Kaizen backlog | `/tmp/5s-kaizen-backlog.json` |
 | Audit fallback log | `/tmp/5s-audit.log` |
+| Shitsuke metrics | `/tmp/5s-metrics.json` |
+| Shitsuke reports | `/tmp/5s-reports` |
 
 Environment variables can override plan and backup roots:
 
@@ -57,4 +59,8 @@ Environment variables can override plan and backup roots:
 FIVE_S_PLANS_DIR=/custom/plans
 FIVE_S_BACKUP_DIR=/custom/backups
 FIVE_S_KAIZEN_BACKLOG=/custom/kaizen-backlog.json
+FIVE_S_AUDIT_LOG=/custom/5s-audit.log
+FIVE_S_METRICS_PATH=/custom/5s-metrics.json
+FIVE_S_COMPLIANCE_PATH=/custom/5s-compliance.json
+FIVE_S_REPORTS_DIR=/custom/5s-reports
 ```

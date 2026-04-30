@@ -142,6 +142,8 @@ Use the Lean extension tools before or after maintenance when an agent needs imp
 
 Cleanup recommendations from these tools must still go through `seiso_clean_system` plan, stage, and approved apply. Cron recommendations must go through `5s_cron_manager`. Improvement records are tracked through `kaizen_improve`.
 
+For repository validation, use `poka_yoke_guard` with `profile=repo` so documentation examples and test fixtures do not fail the same way production source findings do. Use `profile=production` for deployable scripts and live automation content.
+
 ## Verification
 
 Before committing operational changes:

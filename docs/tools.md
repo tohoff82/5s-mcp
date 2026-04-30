@@ -160,6 +160,8 @@ Actions:
 - `plan`
 - `cleanup`
 
+Remote cleanup plans are manifest-based. The tool refuses broad safe-root cleanup targets such as `/tmp`, `/var/tmp`, `/home`, or `/home/user`; it only plans cleanup for concrete session/artifact paths and applies only manifest file items.
+
 ## `kaizen_improve`
 
 Continuous improvement backlog and recommendations. Read-only by default; cleanup recommendations link to `seiso_clean_system` plans.
@@ -231,7 +233,8 @@ Error-prevention scan/suggest/validate. It does not edit files; suggested fixes 
 {
   "action": "scan",
   "target_path": ".",
-  "max_files": 100
+  "max_files": 100,
+  "profile": "repo"
 }
 ```
 
@@ -242,6 +245,13 @@ Actions:
 - `validate`: pass/fail based on high-risk findings.
 
 Current prevention rules detect direct delete pipelines, possible secret literals, hardcoded root deployment paths, and cron edits that should go through `5s_cron_manager`.
+
+Profiles:
+
+- `repo`: default; downgrades markdown fenced examples and test fixtures.
+- `production`: strict mode; examples remain actionable findings.
+- `docs`: treats findings as documentation examples.
+- `tests`: treats findings as test/fixture context.
 
 ## `lean_ops`
 
