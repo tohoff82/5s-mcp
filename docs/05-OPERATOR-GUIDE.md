@@ -35,6 +35,10 @@ Configure an MCP client with `node` plus the absolute path to `src/mcp-server/in
 4. Check host readiness using `5s-shitsuke` action `health` or `lean_ops` action `andon_status`.
 5. Stop when Jidoka reports a critical condition, policy returns `P4_FORBIDDEN`, required platform capabilities are unavailable, or evidence is incomplete.
 
+### File-in-use detection
+
+Local Seiso checks candidate files with `lsof` and then `fuser`. If both probes are unavailable or fail, the runtime records `in_use=false`; this is fail-open for that signal only and is not proof that the file is unused. Confirm at least one probe is available when open-file status matters, retain an appropriate `preserve_days` window and policy scope, and do not approve apply while material usage evidence is unknown.
+
 ## State and environment
 
 | Variable/default | Purpose |

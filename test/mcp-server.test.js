@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { FiveSMcpServer } from '../src/mcp-server/server.js';
 import { PACKAGE_VERSION } from '../src/version.js';
 
@@ -25,4 +26,42 @@ test('MCP server registers production hardening tools', () => {
     assert.equal(typeof tool.annotations.destructiveHint, 'boolean');
     assert.equal(typeof tool.annotations.idempotentHint, 'boolean');
   }
+});
+
+test('destructive tool failures keep details in stderr and return a generic MCP error', async () => {
+  const server = new FiveSMcpServer();
+  const tool = server.tools.get('seiso_clean_system');
+  const sensitiveMessage = 'backup failed at /private/operator/path';
+  server.tools.set(tool.name, {
+    ...tool,
+    execute: async () => {
+      throw new Error(sensitiveMessage);
+    }
+  });
+
+  const stderr = [];
+  const originalConsoleError = console.error;
+  console.error = (...args) => stderr.push(args.map(String).join(' '));
+
+  try {
+    await assert.rejects(
+      server.handleToolCall({
+        params: {
+          name: tool.name,
+          arguments: { action: 'apply', plan_id: 'synthetic-plan', approved: true }
+        }
+      }),
+      error => {
+        assert.equal(error.code, ErrorCode.InternalError);
+        assert.match(error.message, /Tool execution failed$/);
+        assert.doesNotMatch(error.message, /private\/operator\/path/);
+        return true;
+      }
+    );
+  } finally {
+    console.error = originalConsoleError;
+  }
+
+  assert.match(stderr.join('\n'), /seiso_clean_system/);
+  assert.match(stderr.join('\n'), /backup failed at \/private\/operator\/path/);
 });

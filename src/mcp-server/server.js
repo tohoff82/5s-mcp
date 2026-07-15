@@ -54,39 +54,46 @@ class FiveSMcpServer {
 
     // Обробка виконання інструментів
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
-      
-      if (!this.tools.has(name)) {
-        throw new McpError(
-          ErrorCode.MethodNotFound,
-          `Unknown tool: ${name}`
-        );
-      }
-
-      try {
-        const tool = this.tools.get(name);
-        const result = await tool.execute(args);
-        
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        throw new McpError(
-          ErrorCode.InternalError,
-          `Tool execution failed: ${error.message}`
-        );
-      }
+      return this.handleToolCall(request);
     });
 
     // Обробка помилок
     this.server.onerror = (error) => {
       console.error('[MCP Server Error]', error);
     };
+  }
+
+  async handleToolCall(request) {
+    const { name, arguments: args } = request.params;
+    const tool = this.tools.get(name);
+
+    if (!tool) {
+      throw new McpError(
+        ErrorCode.MethodNotFound,
+        `Unknown tool: ${name}`
+      );
+    }
+
+    try {
+      const result = await tool.execute(args);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      console.error(`[5S MCP] Tool execution failed: ${name}`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const clientMessage = tool.annotations?.destructiveHint
+        ? 'Tool execution failed'
+        : `Tool execution failed: ${errorMessage}`;
+
+      throw new McpError(ErrorCode.InternalError, clientMessage);
+    }
   }
 
   registerTools() {

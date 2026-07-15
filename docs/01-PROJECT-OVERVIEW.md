@@ -13,7 +13,7 @@ audience: [user, operator, maintainer, agent]
 
 ## Current runtime facts
 
-- Package and handshake version: `5s-mcp@1.0.0`.
+- Package and handshake version: `5s-mcp@1.0.1`.
 - 12 tools: 5 core 5S tools, 3 safety controls, and 4 Lean extensions.
 - 6 read-only tools, 2 mixed non-destructive tools, and 4 destructive-capable tools.
 - 1 stdio entrypoint: `src/mcp-server/index.js`; protocol messages use stdout and diagnostics use stderr.

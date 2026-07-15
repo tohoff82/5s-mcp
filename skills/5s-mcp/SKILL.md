@@ -43,4 +43,4 @@ Read [maintenance workflow](references/maintenance-lifecycle.md). Local Seiso us
 
 Return bounded/redacted evidence: selected tool/action, scope, policy verdict, plan id, artifact/backup status, approval state, result/skips/failures, verification, and residual risk. Use [troubleshooting](references/troubleshooting.md), then escalate when recovery requires operator authority or an external trust/configuration change.
 
-Current surface: 12 tools in 1 ordered registry—6 read-only, 2 mixed non-destructive, and 4 destructive-capable—with package/handshake version `1.0.0`.
+Current surface: 12 tools in 1 ordered registry—6 read-only, 2 mixed non-destructive, and 4 destructive-capable—with package/handshake version `1.0.1`.
