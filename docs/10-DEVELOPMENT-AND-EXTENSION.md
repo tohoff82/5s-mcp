@@ -18,7 +18,7 @@ audience: [maintainer]
 5. For paths, writes, destructive actions, policy relaxation, cron, or remote behavior, add explicit policy/dry-run/approval/fail-closed gates and tests.
 6. Add tests for registration, schema, read/write behavior, denied paths, approval, state persistence, partial failure, platform fallback, and recovery.
 7. Run `npm run docs:generate`; update canonical operator/security/lifecycle/examples only when behavior changed. Never hand-edit generated `04`.
-8. Run `npm run check`, `npm test`, `npm run docs:verify`, `npm run poka:validate`, production audit, and pack dry run. The script uses `profile=repo`; use `profile=production` only for the deployable content placed in scope.
+8. Run `npm run check`, `npm test`, `npm run docs:links`, `npm run docs:verify`, `npm run poka:validate`, production audit, and pack dry run. The script uses `profile=repo`; use `profile=production` only for the deployable content placed in scope.
 
 ## Documentation changes
 

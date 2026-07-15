@@ -6,11 +6,11 @@
  * Інтеграція в 5S MCP систему
  */
 
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { spawn } from 'child_process';
+import fs from 'fs/promises';
+import path from 'path';
 
-const execAsync = promisify(exec);
+const FILE_COUNT_LIMIT = 15_001;
+const WALK_TIMEOUT_MS = 10_000;
 
 export class IntelligentWorkspaceTree {
   constructor(memorySkill = null) {
@@ -138,21 +138,23 @@ export class IntelligentWorkspaceTree {
    */
   async analyzePath(targetPath) {
     try {
-      // Швидкий підрахунок з захистом від зависання
-      const countCommand = `timeout 10s find "${targetPath}" -type f 2>/dev/null | wc -l`;
-      const { stdout } = await execAsync(countCommand);
-      const fileCount = parseInt(stdout.trim()) || 0;
-
-      // Детекція типу проекту
-      const { stdout: sampleFiles } = await execAsync(
-        `find "${targetPath}" -maxdepth 2 -type f 2>/dev/null | head -20`
-      );
+      const countedFiles = await listWorkspaceFiles(targetPath, {
+        maxFiles: FILE_COUNT_LIMIT,
+        timeoutMs: WALK_TIMEOUT_MS
+      });
+      const sampleFiles = await listWorkspaceFiles(targetPath, {
+        maxDepth: 2,
+        maxFiles: 20,
+        timeoutMs: WALK_TIMEOUT_MS
+      });
+      const fileCount = countedFiles.length;
       
-      const projectType = this.detectProjectType(sampleFiles, targetPath);
+      const projectType = this.detectProjectType(sampleFiles.join('\n'), targetPath);
       const size = this.categorizeSize(fileCount);
 
       return {
         fileCount,
+        countTruncated: fileCount === FILE_COUNT_LIMIT,
         size,
         projectType,
         analysisSuccessful: true
@@ -174,7 +176,11 @@ export class IntelligentWorkspaceTree {
    */
   createStrategy(memoryContext, pathAnalysis, userOptions) {
     // Базова стратегія на основі розміру
-    let baseStrategy = { ...this.strategies[pathAnalysis.size] } || { ...this.strategies.medium };
+    const selectedStrategy = this.strategies[pathAnalysis.size] || this.strategies.medium;
+    let baseStrategy = {
+      ...selectedStrategy,
+      excludePatterns: [...selectedStrategy.excludePatterns]
+    };
 
     // Адаптація на основі пам'яті
     if (memoryContext.hasIssues || memoryContext.recommendation === 'conservative') {
@@ -185,9 +191,16 @@ export class IntelligentWorkspaceTree {
     baseStrategy = this.adaptForProjectType(baseStrategy, pathAnalysis.projectType);
 
     // Застосування користувацьких параметрів
+    const requestedDepth = Number(userOptions.maxDepth);
+    const requestedFiles = Number(userOptions.maxFiles);
     const finalStrategy = {
       ...baseStrategy,
-      ...userOptions,
+      maxDepth: Number.isFinite(requestedDepth)
+        ? Math.min(10, Math.max(1, Math.trunc(requestedDepth)))
+        : baseStrategy.maxDepth,
+      maxFiles: Number.isFinite(requestedFiles)
+        ? Math.min(1000, Math.max(10, Math.trunc(requestedFiles)))
+        : baseStrategy.maxFiles,
       name: `adaptive_${pathAnalysis.size}_${pathAnalysis.projectType}`,
       reasoning: [
         `Розмір: ${pathAnalysis.fileCount} файлів (${pathAnalysis.size})`,
@@ -205,23 +218,19 @@ export class IntelligentWorkspaceTree {
    */
   async executeStrategy(targetPath, strategy) {
     try {
-      // Будуємо розумну find команду
-      const excludeArgs = strategy.excludePatterns
-        .flatMap(pattern => ['-not', '-path', `*/${pattern}/*`])
-        .join(' ');
-      
-      const findCommand = `find "${targetPath}" -maxdepth ${strategy.maxDepth} ${excludeArgs} -type f 2>/dev/null | head -${strategy.maxFiles}`;
-      
-      const { stdout } = await execAsync(findCommand);
-      const files = stdout.trim().split('\n').filter(f => f.trim());
+      const files = await listWorkspaceFiles(targetPath, {
+        maxDepth: strategy.maxDepth,
+        maxFiles: strategy.maxFiles,
+        excludePatterns: strategy.excludePatterns,
+        timeoutMs: WALK_TIMEOUT_MS
+      });
       
       // Форматуємо як tree структуру
       const tree = this.formatAsTree(files, targetPath);
       
       return {
         tree,
-        filesShown: files.length,
-        command: findCommand
+        filesShown: files.length
       };
 
     } catch (error) {
@@ -314,7 +323,7 @@ export class IntelligentWorkspaceTree {
     if (files.length === 0) return 'No files found with current criteria';
     
     const relativePaths = files
-      .map(f => f.replace(basePath, '').replace(/^\/+/, ''))
+      .map(filePath => path.relative(path.resolve(basePath), filePath))
       .filter(f => f)
       .sort();
 
@@ -329,4 +338,76 @@ export class IntelligentWorkspaceTree {
 
     return tree.join('\n');
   }
+}
+
+async function listWorkspaceFiles(targetPath, options = {}) {
+  const root = path.resolve(String(targetPath));
+  const maxDepth = Number.isFinite(options.maxDepth) ? options.maxDepth : Number.POSITIVE_INFINITY;
+  const maxFiles = Number.isFinite(options.maxFiles) ? options.maxFiles : FILE_COUNT_LIMIT;
+  const excludePatterns = Array.isArray(options.excludePatterns) ? options.excludePatterns : [];
+  const deadline = Date.now() + (options.timeoutMs || WALK_TIMEOUT_MS);
+  const rootStat = await fs.lstat(root);
+
+  if (rootStat.isFile()) return [root];
+  if (!rootStat.isDirectory()) return [];
+
+  const files = [];
+  const pending = [{ directory: root, depth: 0 }];
+
+  while (pending.length > 0 && files.length < maxFiles) {
+    if (Date.now() > deadline) {
+      throw new Error(`Workspace scan exceeded ${options.timeoutMs || WALK_TIMEOUT_MS}ms`);
+    }
+
+    const current = pending.pop();
+    let entries;
+    try {
+      entries = await fs.readdir(current.directory, { withFileTypes: true });
+    } catch (error) {
+      if (current.directory === root) throw error;
+      continue;
+    }
+
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+    const childDirectories = [];
+
+    for (const entry of entries) {
+      const fullPath = path.join(current.directory, entry.name);
+      const relativePath = path.relative(root, fullPath);
+      const entryDepth = current.depth + 1;
+      if (isExcluded(relativePath, entry.name, excludePatterns)) continue;
+      if (entry.isSymbolicLink()) continue;
+
+      if (entry.isFile() && entryDepth <= maxDepth) {
+        files.push(fullPath);
+        if (files.length >= maxFiles) break;
+      } else if (entry.isDirectory() && entryDepth < maxDepth) {
+        childDirectories.push({ directory: fullPath, depth: entryDepth });
+      }
+    }
+
+    pending.push(...childDirectories.reverse());
+  }
+
+  return files;
+}
+
+function isExcluded(relativePath, baseName, patterns) {
+  const normalized = relativePath.split(path.sep).join('/');
+  const segments = normalized.split('/');
+
+  return patterns.some(pattern => {
+    const value = String(pattern);
+    if (!value.includes('*')) return segments.includes(value);
+    const regex = globToRegExp(value);
+    return regex.test(normalized) || regex.test(baseName);
+  });
+}
+
+function globToRegExp(pattern) {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*/g, '.*')
+    .replace(/\*/g, '[^/]*');
+  return new RegExp(`^${escaped}$`);
 }

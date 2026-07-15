@@ -44,6 +44,35 @@ test('cron manager refuses destructive custom jobs', async () => {
   await rm(tmp, { recursive: true, force: true });
 });
 
+test('cron manager rejects newline injection in rendered fields', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), '5s-cron-'));
+  const tool = createCronManagerTool();
+
+  await assert.rejects(
+    () => tool.execute({
+      action: 'validate',
+      project_dir: tmp,
+      user: 'root\n* * * * * attacker'
+    }),
+    /user must be a non-empty single-line string/
+  );
+
+  await assert.rejects(
+    () => tool.execute({
+      action: 'validate',
+      project_dir: tmp,
+      jobs: [{
+        id: 'injected',
+        schedule: '0 1 * * *',
+        command: 'node health.js\n* * * * * root rm -rf /'
+      }]
+    }),
+    /command for injected must be a non-empty single-line string/
+  );
+
+  await rm(tmp, { recursive: true, force: true });
+});
+
 test('cron manager can read an existing cron file', async () => {
   const tmp = await mkdtemp(path.join(os.tmpdir(), '5s-cron-'));
   const cronPath = path.join(tmp, '5s.cron');

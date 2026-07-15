@@ -137,7 +137,10 @@ async function executeWorkspaceTree(targetPath, userOptions, toolOrchestrator) {
     const workspaceTree = new IntelligentWorkspaceTree(memoryHelper);
     
     // Виконуємо з користувацькими параметрами
-    const result = await workspaceTree.createTree(targetPath, userOptions);
+    const result = await workspaceTree.createTree(targetPath, {
+      maxDepth: userOptions.max_depth,
+      maxFiles: userOptions.max_files
+    });
     
     return {
       success: true,

@@ -20,8 +20,8 @@ Assets include the policy file, plan/manifests, dry-run artifacts, backup lists/
 - The ordered registry exposes conservative read-only, destructive, and idempotence hints; mixed tools are classified by their most powerful action.
 - Seiso persists plans, evaluates every operation, requires stage plus `approved=true`, rejects a failed required backup, re-evaluates policy at apply, and records before/after verification.
 - Default deny rules protect selected service/config/data paths and dangerous command patterns. A deny match remains blocked even when approval is supplied.
-- Cron content rejects destructive command classes. Install and remove default to dry-run and evaluate the selected path through safety policy before mutation.
-- Remote cleanup accepts only concrete descendants of configured safe roots, rejects broad roots and denied roots, builds manifest-only removal commands, defaults to dry-run, and requires approval for execution.
+- Cron content rejects control-character/newline injection and destructive command classes. Install and remove default to dry-run and evaluate the selected path through safety policy before mutation.
+- Remote cleanup validates SSH target/evidence fields, does not echo raw command evidence, accepts only concrete descendants of configured safe roots, rejects broad roots and denied roots, builds manifest-only removal commands, defaults to dry-run, and requires approval for execution.
 - Gemba context redacts secret-like values, Poka-Yoke detects risky patterns, and platform helpers report unsupported capabilities instead of treating every host as Linux.
 - MCP stdout is reserved for protocol data; operational diagnostics use stderr.
 

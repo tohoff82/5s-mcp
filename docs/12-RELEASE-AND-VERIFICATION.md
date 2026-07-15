@@ -27,7 +27,7 @@ npm run audit:prod
 npm run pack:dry-run
 ```
 
-The high-severity production audit is a release gate. A failing advisory result must be reported and resolved through a reviewed dependency change; documentation cannot waive it. Pack output must contain the runtime source, canonical docs, manifest, generator/verifier scripts, skill membrane, active changelog schemas/templates, root onboarding/security files, configuration defaults, and license without local operator state. Historical procedure records remain repository evidence and are excluded from the npm allowlist.
+The moderate-and-higher production audit is a release gate. A failing advisory result must be reported and resolved through a reviewed dependency change; documentation cannot waive it. `npm run check` syntax-checks every shipped/runtime, test, and maintenance JavaScript module plus the bootstrap shell. Pack output must contain the runtime source, canonical docs, manifest, generator/verifier scripts, skill membrane, active changelog schemas/templates, root onboarding/security files, configuration defaults, and license without local operator state. Historical procedure records remain repository evidence and are excluded from the npm allowlist.
 
 ## Documentation membrane gate
 

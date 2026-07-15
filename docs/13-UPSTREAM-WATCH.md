@@ -15,7 +15,7 @@ Review at every dependency/runtime upgrade and release. Record evidence in the c
 |---|---|---|---|---|
 | Node.js | package supports >=18 and ESM | stdio, signals, filesystem, child process behavior | supported-version tests and syntax checks | minimum/EOL or runtime change |
 | MCP SDK | list-tools/call-tools over stdio with annotations | schema/annotation/result compatibility | MCP registry test and client smoke test | SDK minor/major/security advisory |
-| npm dependency tree | no unaccepted high-severity production advisory | transitive HTTP/schema/runtime packages | `npm run audit:prod`, lock review | advisory or lock update |
+| npm dependency tree | no unaccepted moderate-or-higher production advisory | transitive HTTP/schema/runtime packages | `npm run audit:prod`, registry-signature verification, lock review | advisory or lock update |
 | Linux/macOS host tools | unsupported capabilities remain explicit | `systemctl`, `journalctl`, apt, `df`, `free`, `tar`, cron differences | platform tests and read-only smoke checks | OS/tool major change |
 | OpenSSH client | batch finite remote inspection/cleanup | host trust, quoting, identity path, exit/output behavior | remote-clean unit tests plus approved host smoke test | OpenSSH or policy change |
 | Filesystem/archive tools | plan and backup roots preserve identity and content | permissions, symlinks, inode drift, tar failure | Seiso engine tests and staged fixture | filesystem/tar/platform change |

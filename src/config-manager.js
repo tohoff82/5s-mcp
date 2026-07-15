@@ -202,6 +202,7 @@ export class ConfigManager {
    * Завантаження конфігурації модуля
    */
   async loadConfig(moduleName) {
+    this.assertKnownModule(moduleName);
     try {
       const configFile = path.join(this.configPath, `${moduleName}.json`);
       const configData = await fs.readFile(configFile, 'utf-8');
@@ -216,6 +217,7 @@ export class ConfigManager {
    * Збереження конфігурації модуля
    */
   async saveConfig(moduleName, config) {
+    this.assertKnownModule(moduleName);
     try {
       const configFile = path.join(this.configPath, `${moduleName}.json`);
       
@@ -245,6 +247,7 @@ export class ConfigManager {
    * Валідація конфігурації
    */
   validateConfig(moduleName, config) {
+    this.assertKnownModule(moduleName);
     const errors = [];
     const warnings = [];
     
@@ -393,8 +396,12 @@ export class ConfigManager {
           const validation = this.validateConfig(moduleName, config);
           
           if (validation.valid) {
-            await this.saveConfig(moduleName, config);
-            results.imported++;
+            const saved = await this.saveConfig(moduleName, config);
+            if (saved.success) {
+              results.imported++;
+            } else {
+              results.errors.push(`${moduleName}: ${saved.error}`);
+            }
           } else {
             results.errors.push(`${moduleName}: ${validation.errors.join(', ')}`);
           }
@@ -413,6 +420,13 @@ export class ConfigManager {
         success: false,
         error: error.message
       };
+    }
+  }
+
+  assertKnownModule(moduleName) {
+    const knownModules = new Set([...Object.keys(this.defaultConfigs), 'main']);
+    if (typeof moduleName !== 'string' || !knownModules.has(moduleName)) {
+      throw new Error(`Unknown config module: ${moduleName}`);
     }
   }
 

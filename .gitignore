@@ -32,5 +32,4 @@ tmp/
 temp/
 *.tmp
 
-# Package lock (optional - remove if you want to track it)
-# package-lock.json
+# package-lock.json is intentionally tracked as release and audit evidence.

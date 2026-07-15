@@ -33,14 +33,18 @@ export function createSeiriTool() {
           type: 'object',
           properties: {
             age_days: {
-              type: 'number',
+              type: 'integer',
               description: 'Файли старше N днів вважати застарілими',
-              default: 30
+              default: 30,
+              minimum: 0,
+              maximum: 36500
             },
             size_mb: {
-              type: 'number', 
+              type: 'integer',
               description: 'Мінімальний розмір файлу в МБ для включення',
-              default: 10
+              default: 10,
+              minimum: 0,
+              maximum: 1000000
             },
             include_hidden: {
               type: 'boolean',
@@ -60,6 +64,11 @@ export function createSeiriTool() {
         size_mb = 10,
         include_hidden = false
       } = criteria;
+      const normalizedCriteria = {
+        age_days: boundedInteger(age_days, 'criteria.age_days', 0, 36_500),
+        size_mb: boundedInteger(size_mb, 'criteria.size_mb', 0, 1_000_000),
+        include_hidden: include_hidden === true
+      };
 
       const results = {
         timestamp: new Date().toISOString(),
@@ -71,7 +80,7 @@ export function createSeiriTool() {
       try {
         switch (target) {
           case 'files':
-            results.analysis = await analyzeFiles(targetPath, { age_days, size_mb, include_hidden });
+            results.analysis = await analyzeFiles(targetPath, normalizedCriteria);
             break;
             
           case 'processes':
@@ -87,7 +96,7 @@ export function createSeiriTool() {
             break;
             
           case 'all':
-            results.analysis.files = await analyzeFiles(targetPath, { age_days, size_mb, include_hidden });
+            results.analysis.files = await analyzeFiles(targetPath, normalizedCriteria);
             results.analysis.processes = await analyzeProcesses();
             results.analysis.packages = await analyzePackages();
             results.analysis.logs = await analyzeLogs();
@@ -118,7 +127,7 @@ async function analyzeFiles(targetPath, options) {
   
   try {
     // Базовий аналіз диску
-    const { stdout: dfOutput } = await execAsync(`df -h "${targetPath}" 2>/dev/null || df -h /`);
+    const { stdout: dfOutput } = await execAsync(`df -h ${shellQuote(targetPath)} 2>/dev/null || df -h /`);
     
     const largeFiles = await collectFindFiles(targetPath, `-type f -size +${size_mb}M`, include_hidden);
     const oldFiles = await collectFindFiles(targetPath, `-type f -mtime +${age_days}`, include_hidden);
@@ -150,7 +159,7 @@ async function analyzeFiles(targetPath, options) {
 
 async function collectFindFiles(targetPath, predicate, includeHidden) {
   const hiddenFilter = includeHidden ? '' : ' ! -path "*/.*"';
-  const command = `find "${targetPath}" ${hiddenFilter} ${predicate} -printf "%p\\t%s\\t%T@\\t%u\\t%g\\t%i\\n" 2>/dev/null | head -200 || true`;
+  const command = `find ${shellQuote(targetPath)} ${hiddenFilter} ${predicate} -printf "%p\\t%s\\t%T@\\t%u\\t%g\\t%i\\n" 2>/dev/null | head -200 || true`;
   const { stdout } = await execAsync(command);
   return stdout
     .split('\n')
@@ -166,6 +175,18 @@ async function collectFindFiles(targetPath, predicate, includeHidden) {
         inode
       };
     });
+}
+
+function boundedInteger(value, label, minimum, maximum) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || !Number.isInteger(number) || number < minimum || number > maximum) {
+    throw new Error(`${label} must be an integer between ${minimum} and ${maximum}`);
+  }
+  return number;
+}
+
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, "'\\''")}'`;
 }
 
 async function classifySeiriFiles(files, criteria) {

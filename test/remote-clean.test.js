@@ -24,6 +24,13 @@ test('remote clean resolves home-relative evidence for the selected non-root use
   assert.equal(isRemoteCleanupCandidate(inferred[0].path), true);
 });
 
+test('remote clean does not echo raw command evidence in inferred reasons', () => {
+  const inferred = inferTouchedPaths([], ['cd /tmp/agent-run-123 && export API_TOKEN=secret-value']);
+
+  assert.equal(inferred[0].reason, 'inferred from command evidence');
+  assert.doesNotMatch(inferred[0].reason, /secret-value|API_TOKEN/);
+});
+
 test('remote clean only treats safe roots as cleanup candidates', () => {
   assert.equal(isRemoteCleanupCandidate('/tmp'), false);
   assert.equal(isRemoteCleanupCandidate('/var/tmp'), false);
@@ -35,6 +42,24 @@ test('remote clean only treats safe roots as cleanup candidates', () => {
   assert.equal(isRemoteCleanupCandidate('/etc/nginx/sites-enabled/app'), false);
   assert.equal(isRemoteCleanupCandidate('/var/lib/mongodb'), false);
   assert.equal(isRemoteCleanupCandidate('/root/.ssh/id_rsa'), false);
+});
+
+test('remote clean rejects malformed SSH targets before execution', async () => {
+  let executed = false;
+  const tool = createRemoteCleanTool({
+    executor: {
+      async run() {
+        executed = true;
+        return { stdout: '', stderr: '' };
+      }
+    }
+  });
+
+  await assert.rejects(
+    () => tool.execute({ action: 'analyze', host: '-oProxyCommand=unexpected' }),
+    /host must be a hostname/
+  );
+  assert.equal(executed, false);
 });
 
 test('remote clean builds manifest operations with executable remote command', async () => {

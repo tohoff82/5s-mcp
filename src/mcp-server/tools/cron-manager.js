@@ -25,21 +25,28 @@ export function createCronManagerTool() {
         cron_path: {
           type: 'string',
           description: 'Cron file path',
-          default: DEFAULT_CRON_PATH
+          default: DEFAULT_CRON_PATH,
+          minLength: 1,
+          pattern: '^[^\\r\\n\\u0000]+$'
         },
         project_dir: {
           type: 'string',
-          description: 'Directory containing this 5S MCP checkout'
+          description: 'Directory containing this 5S MCP checkout',
+          minLength: 1,
+          pattern: '^[^\\r\\n\\u0000]+$'
         },
         node_bin: {
           type: 'string',
           description: 'Node.js binary path',
-          default: 'node'
+          default: 'node',
+          minLength: 1,
+          pattern: '^[^\\r\\n\\u0000]+$'
         },
         user: {
           type: 'string',
           description: 'Cron user field for /etc/cron.d files',
-          default: 'root'
+          default: 'root',
+          pattern: '^[A-Za-z_][A-Za-z0-9_-]*[$]?$'
         },
         jobs: {
           type: 'array',
@@ -48,10 +55,10 @@ export function createCronManagerTool() {
             type: 'object',
             properties: {
               id: { type: 'string' },
-              schedule: { type: 'string' },
-              command: { type: 'string' },
+              schedule: { type: 'string', minLength: 1, pattern: '^[^\\r\\n\\u0000]+$' },
+              command: { type: 'string', minLength: 1, pattern: '^[^\\r\\n\\u0000]+$' },
               enabled: { type: 'boolean' },
-              description: { type: 'string' }
+              description: { type: 'string', minLength: 1, pattern: '^[^\\r\\n\\u0000]+$' }
             },
             required: ['id', 'schedule', 'command']
           }
@@ -79,6 +86,8 @@ export function createCronManagerTool() {
         dry_run = true,
         reload_service = false
       } = args;
+
+      validateSingleLine(cron_path, 'cron_path');
 
       switch (action) {
         case 'render': {
@@ -147,6 +156,9 @@ export function createCronManagerTool() {
 }
 
 async function renderCron({ project_dir, node_bin, user, jobs }) {
+  validateSingleLine(project_dir, 'project_dir');
+  validateSingleLine(node_bin, 'node_bin');
+  validateCronUser(user);
   const resolvedProjectDir = path.resolve(project_dir);
   await fs.access(resolvedProjectDir);
 
@@ -189,14 +201,35 @@ function defaultJobs(projectDir, nodeBin) {
 }
 
 function validateJob(job) {
+  if (!job || typeof job !== 'object') {
+    throw new Error('Cron job must be an object');
+  }
   if (!/^[a-z0-9][a-z0-9-_.]+$/i.test(job.id)) {
     throw new Error(`Invalid cron job id: ${job.id}`);
+  }
+  validateSingleLine(job.schedule, `schedule for ${job.id}`);
+  validateSingleLine(job.command, `command for ${job.id}`);
+  if (job.description !== undefined) {
+    validateSingleLine(job.description, `description for ${job.id}`);
   }
   if (!/^(@(hourly|daily|weekly|monthly|yearly|reboot)|(\S+\s+){4}\S+)$/.test(job.schedule)) {
     throw new Error(`Invalid cron schedule for ${job.id}: ${job.schedule}`);
   }
-  if (/\b(rm|find\s+.*-delete|autoremove|purge|drop_caches|mkfs|shutdown|reboot)\b/.test(job.command)) {
+  if (/\b(rm|find\s+.*-delete|autoremove|purge|drop_caches|mkfs|shutdown|reboot|wipefs|shred|unlink|rmdir)\b/i.test(job.command)) {
     throw new Error(`Refusing destructive cron command for ${job.id}. Use staged 5S plans instead.`);
+  }
+}
+
+function validateCronUser(user) {
+  validateSingleLine(user, 'user');
+  if (!/^[a-z_][a-z0-9_-]*[$]?$/i.test(user)) {
+    throw new Error('user must be a single POSIX account name');
+  }
+}
+
+function validateSingleLine(value, label) {
+  if (typeof value !== 'string' || value.length === 0 || /[\0\r\n]/.test(value)) {
+    throw new Error(`${label} must be a non-empty single-line string`);
   }
 }
 

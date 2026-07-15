@@ -57,14 +57,18 @@ See [operator guidance](05-OPERATOR-GUIDE.md), [security boundaries](06-SECURITY
       "type": "object",
       "properties": {
         "age_days": {
-          "type": "number",
+          "type": "integer",
           "description": "Файли старше N днів вважати застарілими",
-          "default": 30
+          "default": 30,
+          "minimum": 0,
+          "maximum": 36500
         },
         "size_mb": {
-          "type": "number",
+          "type": "integer",
           "description": "Мінімальний розмір файлу в МБ для включення",
-          "default": 10
+          "default": 10,
+          "minimum": 0,
+          "maximum": 1000000
         },
         "include_hidden": {
           "type": "boolean",
@@ -484,21 +488,28 @@ Manage 5S cron schedules without server-specific paths. Supports install, read, 
     "cron_path": {
       "type": "string",
       "description": "Cron file path",
-      "default": "/etc/cron.d/5s-methodology"
+      "default": "/etc/cron.d/5s-methodology",
+      "minLength": 1,
+      "pattern": "^[^\\r\\n\\u0000]+$"
     },
     "project_dir": {
       "type": "string",
-      "description": "Directory containing this 5S MCP checkout"
+      "description": "Directory containing this 5S MCP checkout",
+      "minLength": 1,
+      "pattern": "^[^\\r\\n\\u0000]+$"
     },
     "node_bin": {
       "type": "string",
       "description": "Node.js binary path",
-      "default": "node"
+      "default": "node",
+      "minLength": 1,
+      "pattern": "^[^\\r\\n\\u0000]+$"
     },
     "user": {
       "type": "string",
       "description": "Cron user field for /etc/cron.d files",
-      "default": "root"
+      "default": "root",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_-]*[$]?$"
     },
     "jobs": {
       "type": "array",
@@ -510,16 +521,22 @@ Manage 5S cron schedules without server-specific paths. Supports install, read, 
             "type": "string"
           },
           "schedule": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\r\\n\\u0000]+$"
           },
           "command": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\r\\n\\u0000]+$"
           },
           "enabled": {
             "type": "boolean"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\r\\n\\u0000]+$"
           }
         },
         "required": [
@@ -575,21 +592,31 @@ Remote cleanup mode for agents. Builds and optionally applies a safe cleanup pla
     },
     "host": {
       "type": "string",
-      "description": "Remote host or IP"
+      "description": "Remote host, SSH alias, or IP without user or option prefixes",
+      "minLength": 1,
+      "pattern": "^(?!-)(?!.*@)[A-Za-z0-9_.:\\[\\]%-]+$"
     },
     "user": {
       "type": "string",
-      "default": "root"
+      "default": "root",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_-]*[$]?$"
     },
     "port": {
-      "type": "number",
-      "default": 22
+      "type": "integer",
+      "default": 22,
+      "minimum": 1,
+      "maximum": 65535
     },
     "identity_file": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\r\\n\\u0000]+$"
     },
     "session_id": {
       "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[^\\r\\n\\u0000]+$",
       "description": "Agent session id for traceability"
     },
     "paths_visited": {
@@ -608,7 +635,9 @@ Remote cleanup mode for agents. Builds and optionally applies a safe cleanup pla
     },
     "preserve_days": {
       "type": "number",
-      "default": 1
+      "default": 1,
+      "minimum": -1,
+      "maximum": 36500
     },
     "dry_run": {
       "type": "boolean",
@@ -619,8 +648,10 @@ Remote cleanup mode for agents. Builds and optionally applies a safe cleanup pla
       "default": false
     },
     "max_items": {
-      "type": "number",
-      "default": 50
+      "type": "integer",
+      "default": 50,
+      "minimum": 1,
+      "maximum": 500
     }
   },
   "required": [

@@ -22,11 +22,16 @@ export function createRemoteCleanTool(options = {}) {
           enum: ['analyze', 'plan', 'cleanup'],
           description: 'Remote cleanup action'
         },
-        host: { type: 'string', description: 'Remote host or IP' },
-        user: { type: 'string', default: 'root' },
-        port: { type: 'number', default: 22 },
-        identity_file: { type: 'string' },
-        session_id: { type: 'string', description: 'Agent session id for traceability' },
+        host: {
+          type: 'string',
+          description: 'Remote host, SSH alias, or IP without user or option prefixes',
+          minLength: 1,
+          pattern: '^(?!-)(?!.*@)[A-Za-z0-9_.:\\[\\]%-]+$'
+        },
+        user: { type: 'string', default: 'root', pattern: '^[A-Za-z_][A-Za-z0-9_-]*[$]?$' },
+        port: { type: 'integer', default: 22, minimum: 1, maximum: 65535 },
+        identity_file: { type: 'string', minLength: 1, pattern: '^[^\\r\\n\\u0000]+$' },
+        session_id: { type: 'string', minLength: 1, maxLength: 200, pattern: '^[^\\r\\n\\u0000]+$', description: 'Agent session id for traceability' },
         paths_visited: {
           type: 'array',
           items: { type: 'string' },
@@ -37,10 +42,10 @@ export function createRemoteCleanTool(options = {}) {
           items: { type: 'string' },
           description: 'Commands the agent executed on the remote host'
         },
-        preserve_days: { type: 'number', default: 1 },
+        preserve_days: { type: 'number', default: 1, minimum: -1, maximum: 36500 },
         dry_run: { type: 'boolean', default: true },
         approved: { type: 'boolean', default: false },
-        max_items: { type: 'number', default: 50 }
+        max_items: { type: 'integer', default: 50, minimum: 1, maximum: 500 }
       },
       required: ['action', 'host']
     },
@@ -61,8 +66,14 @@ export function createRemoteCleanTool(options = {}) {
         max_items = 50
       } = args;
 
-      const ssh = { host, user, port, identity_file };
-      const evidence = { session_id, paths_visited, commands_executed, preserve_days, max_items };
+      const ssh = validateSshTarget({ host, user, port, identity_file });
+      const evidence = validateEvidence({
+        session_id,
+        paths_visited,
+        commands_executed,
+        preserve_days,
+        max_items
+      });
 
       switch (action) {
         case 'analyze':
@@ -252,11 +263,11 @@ export function inferTouchedPaths(pathsVisited, commandsExecuted, remoteUser = '
   for (const command of commandsExecuted || []) {
     const gitCloneMatch = command.match(/\bgit\s+clone\s+\S+\s+([/~.A-Za-z0-9_./:-]+)/);
     if (gitCloneMatch) {
-      addCandidate(paths, gitCloneMatch[1], `inferred from command: ${command.slice(0, 120)}`, remoteUser);
+      addCandidate(paths, gitCloneMatch[1], 'inferred from command evidence', remoteUser);
     }
 
     for (const match of command.matchAll(/(?:cd|mkdir|touch|cp|mv|rm|git\s+clone|npm|python|node)\s+([/~.A-Za-z0-9_./:-]+)/g)) {
-      addCandidate(paths, match[1], `inferred from command: ${command.slice(0, 120)}`, remoteUser);
+      addCandidate(paths, match[1], 'inferred from command evidence', remoteUser);
     }
   }
 
@@ -373,4 +384,48 @@ function operationId(value) {
 
 function shellQuote(value) {
   return `'${String(value).replace(/'/g, "'\\''")}'`;
+}
+
+function validateSshTarget({ host, user, port, identity_file }) {
+  if (typeof host !== 'string' || host.length === 0 || host.startsWith('-') || host.includes('@') || !/^[A-Za-z0-9_.:[\]%-]+$/.test(host)) {
+    throw new Error('host must be a hostname, SSH alias, or IP address without whitespace, @, or option prefixes');
+  }
+  if (typeof user !== 'string' || !/^[a-z_][a-z0-9_-]*[$]?$/i.test(user)) {
+    throw new Error('user must be a POSIX account name');
+  }
+  const normalizedPort = Number(port);
+  if (!Number.isInteger(normalizedPort) || normalizedPort < 1 || normalizedPort > 65_535) {
+    throw new Error('port must be an integer between 1 and 65535');
+  }
+  if (identity_file !== undefined && (typeof identity_file !== 'string' || identity_file.length === 0 || /[\0\r\n]/.test(identity_file))) {
+    throw new Error('identity_file must be a non-empty single-line path');
+  }
+  return { host, user, port: normalizedPort, identity_file };
+}
+
+function validateEvidence({ session_id, paths_visited, commands_executed, preserve_days, max_items }) {
+  if (typeof session_id !== 'string' || session_id.length === 0 || session_id.length > 200 || /[\0\r\n]/.test(session_id)) {
+    throw new Error('session_id must be a non-empty single-line string up to 200 characters');
+  }
+  if (!Array.isArray(paths_visited) || !paths_visited.every(value => typeof value === 'string')) {
+    throw new Error('paths_visited must be an array of strings');
+  }
+  if (!Array.isArray(commands_executed) || !commands_executed.every(value => typeof value === 'string')) {
+    throw new Error('commands_executed must be an array of strings');
+  }
+  const normalizedPreserveDays = Number(preserve_days);
+  if (!Number.isFinite(normalizedPreserveDays) || normalizedPreserveDays < -1 || normalizedPreserveDays > 36_500) {
+    throw new Error('preserve_days must be between -1 and 36500');
+  }
+  const normalizedMaxItems = Number(max_items);
+  if (!Number.isInteger(normalizedMaxItems) || normalizedMaxItems < 1 || normalizedMaxItems > 500) {
+    throw new Error('max_items must be an integer between 1 and 500');
+  }
+  return {
+    session_id,
+    paths_visited,
+    commands_executed,
+    preserve_days: normalizedPreserveDays,
+    max_items: normalizedMaxItems
+  };
 }

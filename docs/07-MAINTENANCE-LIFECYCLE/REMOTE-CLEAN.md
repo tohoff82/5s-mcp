@@ -13,7 +13,7 @@ audience: [operator, maintainer, agent]
 
 ## Evidence and candidates
 
-Supply `session_id` when available, plus accurate `paths_visited` and `commands_executed`. Home-relative evidence is resolved against the selected remote user (`/home/<user>` for non-root users); root home is not an allowed cleanup root. The tool infers paths, then accepts only concrete descendants of configured safe roots such as `/tmp`, `/var/tmp`, and `/home`. The roots themselves and denied system roots are not cleanup candidates.
+Supply `session_id` when available, plus accurate `paths_visited` and `commands_executed`. Host/user/port, identity path, session id, evidence arrays, and item bounds are validated before SSH work. Raw command evidence is not echoed in inferred-path reasons. Home-relative evidence is resolved against the selected remote user (`/home/<user>` for non-root users); root home is not an allowed cleanup root. The tool infers paths, then accepts only concrete descendants of configured safe roots such as `/tmp`, `/var/tmp`, and `/home`. The roots themselves and denied system roots are not cleanup candidates.
 
 | Action | Effect |
 |---|---|

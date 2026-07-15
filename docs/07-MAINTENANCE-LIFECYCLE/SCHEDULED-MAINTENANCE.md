@@ -14,7 +14,7 @@ Use `5s_cron_manager` for cron content and file lifecycle. Default jobs run read
 ## Safe workflow
 
 1. `render` using the intended project directory, Node binary, cron user, and jobs.
-2. `validate` the same content. The renderer rejects destructive command patterns.
+2. `validate` the same content. The renderer requires single-line path/user/job fields and rejects control-character injection plus destructive command patterns.
 3. Review schedule, absolute paths, output destinations, permissions, and service name.
 4. Use `install` with default `dry_run=true`; inspect the policy verdict and rendered content.
 5. Set `dry_run=false` only for the exact approved cron path. Install evaluates policy before writing.
