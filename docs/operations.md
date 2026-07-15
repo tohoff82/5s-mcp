@@ -3,7 +3,7 @@ document_id: 5S-DOC-LEGACY-OPERATIONS
 authority: supporting
 status: deprecated
 source_of_truth: docs/05-OPERATOR-GUIDE.md
-last_verified_commit: worktree-based-on-a9b90ff198610dfd560057a321c3e0ce4bd3fba5
+last_verified_commit: 04d75cabcef5da03a21c22982dbe45dacfa6844c
 audience: [operator, agent]
 ---
 
