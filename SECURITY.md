@@ -3,7 +3,7 @@ document_id: 5S-DOC-SECURITY-REPORTING
 authority: canonical
 status: current
 source_of_truth: docs/06-SECURITY-AND-TRUST-BOUNDARIES.md
-last_verified_commit: 04d75cabcef5da03a21c22982dbe45dacfa6844c
+last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
 audience: [user, operator, maintainer, security-researcher]
 ---
 

@@ -3,7 +3,7 @@ document_id: 5S-DOC-MAP
 authority: canonical
 status: current
 source_of_truth: docs/documentation-manifest.json
-last_verified_commit: 04d75cabcef5da03a21c22982dbe45dacfa6844c
+last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
 audience: [user, operator, maintainer, agent]
 ---
 
@@ -13,8 +13,8 @@ This is the single entrypoint for current 5S MCP documentation. Current canonica
 
 ## Current baseline
 
-- Worktree base: `a9b90ff198610dfd560057a321c3e0ce4bd3fba5`.
-- Verification state: code, dependency, safety, package, and membrane gates verified against `04d75cabcef5da03a21c22982dbe45dacfa6844c`; this attestation commit changes documentation metadata only.
+- Worktree base: `d1c61dfbbb91fef9b7e6e4162d6253b1ce90db9f`.
+- Verification state: code, dependency, safety, package, and membrane gates verified against `9c8356ab10310197091d4b683cc06a3c917db84f`; this attestation commit changes documentation metadata only.
 - Package and MCP handshake: `5s-mcp@1.0.1`.
 - Runtime surface: 12 tools in one ordered registry and 1 stdio entrypoint.
 - Capability split: 5 core 5S tools, 3 safety controls, and 4 Lean extensions.
