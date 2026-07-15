@@ -1,4 +1,15 @@
+---
+document_id: 5S-DOC-CONTRIBUTING
+authority: supporting
+status: current
+source_of_truth: docs/10-DEVELOPMENT-AND-EXTENSION.md
+last_verified_commit: worktree-based-on-a9b90ff198610dfd560057a321c3e0ce4bd3fba5
+audience: [maintainer, contributor]
+---
+
 # Contributing
+
+This guide supports the canonical [development workflow](docs/10-DEVELOPMENT-AND-EXTENSION.md), which wins if the two conflict.
 
 ## Development Setup
 
@@ -6,6 +17,7 @@
 npm install
 npm run check
 npm test
+npm run docs:verify
 node demo.js test
 ```
 
@@ -28,6 +40,7 @@ src/
   mcp-server/
     index.js
     server.js
+    tool-registry.js
     tools/
   changelog/
 config/
@@ -39,7 +52,7 @@ test/
 
 - Code uses ES modules.
 - MCP stdio logs do not write to stdout.
-- New tools are registered in `src/mcp-server/server.js`.
+- New tools are registered once in `src/mcp-server/tool-registry.js`.
 - Safety policy changes update `config/safety-policy.json` and tests.
-- Documentation is updated in `docs/`.
-- `npm run check`, `npm test`, and `npm audit --audit-level=high` pass.
+- Documentation changes preserve the manifest, generated reference, authority order, and internal links.
+- `npm run check`, `npm test`, `npm run docs:verify`, `npm run audit:prod`, and `npm run pack:dry-run` pass.

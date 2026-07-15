@@ -1,0 +1,4 @@
+interface:
+  display_name: "5S MCP"
+  short_description: "Operate 5S MCP with plan-first safety"
+  default_prompt: "Use $5s-mcp to choose and run the safest source-backed 5S workflow for this task."

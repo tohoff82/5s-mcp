@@ -1,6 +1,17 @@
-# MongoDB Integration
+---
+document_id: 5S-DOC-MONGODB-SYNC
+authority: supporting
+status: current
+source_of_truth: src/changelog/mongodb-connector.js
+last_verified_commit: worktree-based-on-a9b90ff198610dfd560057a321c3e0ce4bd3fba5
+audience: [operator, maintainer]
+---
+
+# MongoDB integration
 
 MongoDB sync is optional. The changelog works with filesystem storage when MongoDB is unavailable.
+
+This integration stores supporting procedure records. It is not a cleanup policy, authorization, stage, backup, or verification boundary.
 
 ## Configuration
 

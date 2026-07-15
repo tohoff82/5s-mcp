@@ -1,6 +1,15 @@
-# Lean Extensions Implementation Notes
+---
+document_id: 5S-DOC-LEAN-IMPLEMENTATION-HISTORY
+authority: historical
+status: deprecated
+source_of_truth: docs/03-CAPABILITY-AND-MODE-MATRIX.md
+last_verified_commit: worktree-based-on-a9b90ff198610dfd560057a321c3e0ce4bd3fba5
+audience: [maintainer]
+---
 
-The current production surface is the 12-tool 5S MCP service documented in [docs/tools.md](docs/tools.md). The Lean extension checklist below has been implemented in `dev` as MCP tools that build on the safety policy and plan-first maintenance model.
+# Lean extensions implementation notes
+
+This completed plan is historical/deprecated and grants no current implementation authority. The current 12-tool surface is defined by the [generated reference](docs/04-TOOLS-REFERENCE.md) and [capability matrix](docs/03-CAPABILITY-AND-MODE-MATRIX.md).
 
 ## Phase 1: Kaizen
 
@@ -44,7 +53,7 @@ Requirements:
 
 ## Acceptance Criteria For Implemented Tools
 
-- MCP schema documented in `docs/tools.md`.
+- MCP schema generated in `docs/04-TOOLS-REFERENCE.md`.
 - Tests cover success, policy block, and invalid input.
 - No stdout diagnostic logging.
 - No destructive shell pipeline.

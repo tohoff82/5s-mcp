@@ -120,8 +120,17 @@ export function createCronManagerTool() {
         }
 
         case 'remove': {
+          const verdict = await policy.evaluateOperation({
+            command: `remove ${cron_path}`,
+            paths: [cron_path],
+            destructive: true,
+            approved: dry_run === false
+          });
           if (dry_run) {
-            return { timestamp: new Date().toISOString(), action, dry_run, cron_path, would_remove: true };
+            return { timestamp: new Date().toISOString(), action, dry_run, cron_path, would_remove: true, verdict };
+          }
+          if (!verdict.allowed) {
+            throw new Error(`Cron removal blocked by policy: ${verdict.reasons.join('; ')}`);
           }
           await fs.rm(cron_path, { force: true });
           if (reload_service) {

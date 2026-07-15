@@ -1,15 +1,15 @@
 {
   "procedure": {
     "type": "seiri",
-    "name": "Видалення непотрібних файлів/процесів",
-    "description": "Сортування та видалення непотрібних компонентів системи",
+    "name": "Класифікація файлів/процесів",
+    "description": "Read-only Seiri classification before any cleanup plan",
     "category": "system"
   },
   "changes": {
-    "type": "remove",
-    "what": "Непотрібні файли, процеси, або компоненти",
-    "why": "Звільнення ресурсів, покращення продуктивності, зменшення складності",
-    "how": "Аналіз використання ресурсів, ідентифікація непотрібних елементів, безпечне видалення"
+    "type": "inspect",
+    "what": "Necessary, conditional, cleanup-candidate, and forbidden classifications",
+    "why": "Create source-backed evidence before deciding whether a Seiso plan is needed",
+    "how": "seiri_sort_analyze followed by operator review; no removal in Seiri"
   },
   "impact": {
     "scope": "system",
@@ -26,17 +26,16 @@
   "technical": {
     "files_modified": [],
     "commands_executed": [
-      "find /path -type f -name '*.tmp' -delete",
-      "systemctl disable unused-service",
-      "apt autoremove"
+      "seiri_sort_analyze target=files",
+      "5s_safety_policy action=evaluate"
     ],
     "services_affected": [],
-    "backup_location": "/backup/seiri",
-    "rollback_procedure": "Відновити з резервної копії",
+    "backup_location": "not required for read-only classification",
+    "rollback_procedure": "not applicable; no state mutation",
     "validation_steps": [
-      "Перевірити, що системa працює стабільно",
-      "Перевірити, що не видалені потрібні файли",
-      "Моніторити використання ресурсів"
+      "Review every classification and policy reason",
+      "Confirm no state-changing tool was called",
+      "Route approved cleanup candidates to a new Seiso plan"
     ]
   },
   "human_resources": {
@@ -45,9 +44,9 @@
     "time_invested": 30
   },
   "status": {
-    "current": "completed",
-    "completion_percentage": 100,
+    "current": "planned",
+    "completion_percentage": 0,
     "maintenance_frequency": "monthly"
   },
-  "tags": ["cleanup", "optimization", "seiri", "system-maintenance"]
+  "tags": ["classification", "observation", "seiri", "plan-first"]
 }

@@ -90,7 +90,7 @@ export function createRemoteCleanTool(options = {}) {
 }
 
 async function analyzeRemote(ssh, evidence, executor) {
-  const inferredPaths = inferTouchedPaths(evidence.paths_visited, evidence.commands_executed);
+  const inferredPaths = inferTouchedPaths(evidence.paths_visited, evidence.commands_executed, ssh.user);
   const safeCandidates = inferredPaths.filter(candidate => isRemoteCleanupCandidate(candidate.path));
   const inspections = [];
 
@@ -242,39 +242,43 @@ async function applyRemotePlan(ssh, plan, options) {
   };
 }
 
-export function inferTouchedPaths(pathsVisited, commandsExecuted) {
+export function inferTouchedPaths(pathsVisited, commandsExecuted, remoteUser = 'root') {
   const paths = new Map();
 
   for (const visited of pathsVisited || []) {
-    addCandidate(paths, visited, 'provided by agent session evidence');
+    addCandidate(paths, visited, 'provided by agent session evidence', remoteUser);
   }
 
   for (const command of commandsExecuted || []) {
     const gitCloneMatch = command.match(/\bgit\s+clone\s+\S+\s+([/~.A-Za-z0-9_./:-]+)/);
     if (gitCloneMatch) {
-      addCandidate(paths, normalizeRemotePath(gitCloneMatch[1]), `inferred from command: ${command.slice(0, 120)}`);
+      addCandidate(paths, gitCloneMatch[1], `inferred from command: ${command.slice(0, 120)}`, remoteUser);
     }
 
     for (const match of command.matchAll(/(?:cd|mkdir|touch|cp|mv|rm|git\s+clone|npm|python|node)\s+([/~.A-Za-z0-9_./:-]+)/g)) {
-      addCandidate(paths, normalizeRemotePath(match[1]), `inferred from command: ${command.slice(0, 120)}`);
+      addCandidate(paths, match[1], `inferred from command: ${command.slice(0, 120)}`, remoteUser);
     }
   }
 
   return Array.from(paths.values());
 }
 
-function addCandidate(paths, rawPath, reason) {
-  const normalized = normalizeRemotePath(rawPath);
+function addCandidate(paths, rawPath, reason, remoteUser) {
+  const normalized = normalizeRemotePath(rawPath, remoteUser);
   if (!normalized || normalized === '/' || normalized === '~') return;
   if (!paths.has(normalized)) {
     paths.set(normalized, { path: normalized, reason });
   }
 }
 
-function normalizeRemotePath(value) {
+function normalizeRemotePath(value, remoteUser) {
   if (!value || typeof value !== 'string') return null;
   const cleaned = value.trim().replace(/^['"]|['"]$/g, '');
-  if (cleaned.startsWith('~/')) return `/root/${cleaned.slice(2)}`;
+  if (cleaned.startsWith('~/')) {
+    if (!/^[a-z_][a-z0-9_-]*[$]?$/i.test(remoteUser || '')) return null;
+    const home = remoteUser === 'root' ? '/root' : `/home/${remoteUser}`;
+    return path.posix.normalize(`${home}/${cleaned.slice(2)}`);
+  }
   if (cleaned.startsWith('/')) return path.posix.normalize(cleaned);
   return null;
 }

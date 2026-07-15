@@ -38,3 +38,20 @@ test('maintenance engine marks empty file cleanup as noop', async () => {
 
   await rm(tmp, { recursive: true, force: true });
 });
+
+test('maintenance engine fails closed when a required stage backup fails', async () => {
+  const tmp = await mkdtemp(path.join(os.tmpdir(), '5s-engine-'));
+  const plansDir = path.join(tmp, 'plans');
+  const backupDir = path.join(tmp, 'backup');
+  const engine = new MaintenanceExecutionEngine({ plansDir, backupDir });
+  const plan = await engine.createPlan(['cache'], { preserve_days: 7 });
+  engine.createBackup = async () => ({ required: true, created: false, error: 'simulated backup failure' });
+
+  await assert.rejects(() => engine.stagePlan(plan.id), /Required backup was not created/);
+  const failed = await engine.loadPlan(plan.id);
+  assert.equal(failed.mode, 'stage_failed');
+  assert.equal(failed.stage_attempt.backup.created, false);
+  await assert.rejects(() => engine.applyPlan(plan.id, { approved: true }), /must be staged/);
+
+  await rm(tmp, { recursive: true, force: true });
+});

@@ -1,6 +1,17 @@
-# Changelog System
+---
+document_id: 5S-DOC-PROCEDURE-CHANGELOG
+authority: supporting
+status: current
+source_of_truth: src/changelog and docs/changes/5s-procedures
+last_verified_commit: worktree-based-on-a9b90ff198610dfd560057a321c3e0ce4bd3fba5
+audience: [operator, maintainer]
+---
+
+# Changelog system
 
 The changelog records 5S maintenance work with file storage by default and optional MongoDB sync.
+
+This is supporting storage guidance. The canonical [maintenance lifecycle](07-MAINTENANCE-LIFECYCLE/README.md) defines required cleanup evidence and wins if a procedure example conflicts.
 
 ## Location
 

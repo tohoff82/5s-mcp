@@ -1,4 +1,13 @@
-# 5S Changelog Format
+---
+document_id: 5S-DOC-PROCEDURE-FORMAT
+authority: supporting
+status: current
+source_of_truth: docs/changelog.md and docs/07-MAINTENANCE-LIFECYCLE/LOCAL-SEISO.md
+last_verified_commit: worktree-based-on-a9b90ff198610dfd560057a321c3e0ce4bd3fba5
+audience: [operator, maintainer]
+---
+
+# 5S changelog format
 
 Every entry should capture what changed, why it changed, how it was validated, and how it can be rolled back.
 

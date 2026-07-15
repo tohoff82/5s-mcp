@@ -1,134 +1,60 @@
-# 5S MCP Server
+---
+document_id: 5S-DOC-README
+authority: canonical
+status: current
+source_of_truth: docs/00-DOCUMENTATION-MAP.md
+last_verified_commit: worktree-based-on-a9b90ff198610dfd560057a321c3e0ce4bd3fba5
+audience: [user, operator]
+---
 
-Production-safe MCP server for applying the 5S methodology to server maintenance. The service is designed for agents: it analyzes system state, builds cleanup plans, enforces safety policy, manages cron schedules, and supports remote cleanup after agent work.
+# 5S MCP
 
-## Current Status
+5S MCP is a local Node.js MCP server for evidence-driven 5S and Lean maintenance: observation, classification, plan-first cleanup, policy, cron, remote session cleanup, standards, health, prevention, and continuous improvement.
 
-- Runtime: Node.js 18+
-- Transport: MCP stdio
-- Branch model: `main` for production, `dev` for development
-- Safety model: plan-first, deny/allow policy, staged apply
-- MCP surface: 12 tools, including 5S core, safety controls, remote clean, and Lean extensions
-- Verification:
+Current source-backed surface: 12 tools in 1 ordered registry, 1 stdio entrypoint, Node.js >=18, 6 read-only tools, 2 mixed non-destructive tools, and 4 destructive-capable tools. Package and MCP handshake both use version `1.0.0`.
 
-```bash
-npm run check
-npm test
-npm audit --audit-level=high
-```
+## Install and connect
 
-## Install
-
-```bash
+```sh
 git clone https://github.com/tohoff82/5s-mcp.git
 cd 5s-mcp
-npm install
+npm ci
+npm run check
+npm test
+npm run docs:verify
 ```
-
-## Run
-
-```bash
-npm start
-```
-
-MCP client config:
 
 ```json
-{
-  "mcpServers": {
-    "5s": {
-      "command": "node",
-      "args": ["/absolute/path/to/5s-mcp/src/mcp-server/index.js"]
-    }
-  }
-}
+{"mcpServers":{"5s":{"command":"node","args":["/absolute/path/to/5s-mcp/src/mcp-server/index.js"]}}}
 ```
 
-The server writes operational logs to stderr so stdout remains reserved for MCP protocol messages.
+Start with a read-only call:
 
-## Tools
+```json
+{"tool":"gemba_inspect","arguments":{"action":"context","target_path":".","max_files":20}}
+```
 
-| Tool | Purpose |
-| --- | --- |
-| `seiri_sort_analyze` | Classify files/processes/packages/logs as necessary, conditional, cleanup candidates, or forbidden. |
-| `seiton_organize_system` | Inventory, index, workspace tree, and organization plans. Production actions are plan-only. |
-| `seiso_clean_system` | Safe cleanup workflow: `observe -> plan -> stage -> apply`. |
-| `seiketsu_standardize_procedures` | Audit standards and generate formal safety/retention/backup policies. |
-| `5s-shitsuke` | Health checks, audits, metrics, reports, and schedule rendering. |
-| `5s_safety_policy` | Agent-managed deny/allow rules and operation risk evaluation. |
-| `5s_cron_manager` | Render, validate, install, read, and remove cron files without hardcoded server paths. |
-| `5s_remote_clean` | Evidence-driven remote cleanup after agent sessions. |
-| `kaizen_improve` | Continuous improvement suggestions, backlog tracking, and reports. |
-| `gemba_inspect` | Read-only source inspection with policy checks and secret redaction. |
-| `poka_yoke_guard` | Error-prevention scan/suggest/validate with approval-level mapping. |
-| `lean_ops` | Muda/Jidoka/Andon waste, stop-condition, and status operations. |
+## Safety boundary
 
-See [docs/tools.md](docs/tools.md) for schemas and examples.
-
-## Safety Contract
-
-Cleanup is never a direct shell delete pipeline. The required flow is:
+Local cleanup follows:
 
 ```text
 observe -> plan -> policy evaluation -> stage -> approved apply -> verify -> record
 ```
 
-Key rules:
+Tool annotations are conservative hints, not authorization. Run with least privilege, inspect policy first, keep cron and remote cleanup in dry-run until reviewed, and stop on deny verdicts, unsupported platform gates, missing evidence, failed required backups, or verification regressions. The server is not a general shell sandbox, privilege broker, universal backup system, or automatic rollback coordinator.
 
-- `Seiso` creates manifests before deleting anything.
-- `stage` writes a dry-run artifact and backup metadata.
-- `apply` requires `approved=true` and a staged `plan_id`.
-- deny/allow policy is stored in [config/safety-policy.json](config/safety-policy.json).
-- cron defaults are read-only health/audit jobs.
-- remote cleanup is limited to safe roots and is dry-run first.
+## Canonical documentation
 
-See [docs/operations.md](docs/operations.md) and [docs/safety.md](docs/safety.md).
+- [Documentation map](docs/00-DOCUMENTATION-MAP.md)
+- [Generated 12-tool reference](docs/04-TOOLS-REFERENCE.md)
+- [Operator guide](docs/05-OPERATOR-GUIDE.md)
+- [Security and trust boundaries](docs/06-SECURITY-AND-TRUST-BOUNDARIES.md)
+- [Maintenance lifecycle](docs/07-MAINTENANCE-LIFECYCLE/README.md)
+- [Troubleshooting](docs/09-TROUBLESHOOTING.md)
+- [Release and verification](docs/12-RELEASE-AND-VERIFICATION.md)
+- [Security reporting](SECURITY.md)
 
-## Demo
-
-```bash
-node demo.js test
-node demo.js seiso
+```sh
+npm run docs:verify
 ```
-
-The demo uses current MCP tool schemas and only creates cleanup plans; it does not apply destructive changes.
-
-## Documentation
-
-- [docs/README.md](docs/README.md) - documentation map
-- [docs/architecture.md](docs/architecture.md) - runtime architecture
-- [docs/tools.md](docs/tools.md) - MCP tool reference
-- [docs/operations.md](docs/operations.md) - production workflows
-- [docs/safety.md](docs/safety.md) - safety policy and risk levels
-- [docs/remote-clean.md](docs/remote-clean.md) - remote cleanup mode
-- [docs/changelog.md](docs/changelog.md) - changelog storage and CLI
-- [docs/PRODUCTION-HARDENING.md](docs/PRODUCTION-HARDENING.md) - hardening checklist
-- [TODO-LEAN-EXTENSIONS.md](TODO-LEAN-EXTENSIONS.md) - completed Lean extension implementation notes
-
-## Repository Layout
-
-```text
-src/
-  maintenance-engine.js        # plan/stage/apply engine
-  safety-policy.js             # deny/allow policy manager
-  mcp-server/
-    index.js                   # stdio entrypoint
-    server.js                  # MCP tool registration
-    tools/                     # MCP tools
-  changelog/                   # file/Mongo changelog support
-config/
-  safety-policy.json           # production safety defaults
-docs/
-test/
-```
-
-## Development
-
-```bash
-npm install
-npm run check
-npm test
-node demo.js test
-```
-
-Before changing cleanup behavior, add or update tests for policy evaluation, plan generation, staging, and approval gates.

@@ -17,6 +17,13 @@ test('remote clean infers touched temp paths from session evidence', () => {
   assert.ok(inferred.some(item => item.path === '/home/deploy/worktree'));
 });
 
+test('remote clean resolves home-relative evidence for the selected non-root user', () => {
+  const inferred = inferTouchedPaths(['~/worktree'], [], 'deploy');
+
+  assert.deepEqual(inferred, [{ path: '/home/deploy/worktree', reason: 'provided by agent session evidence' }]);
+  assert.equal(isRemoteCleanupCandidate(inferred[0].path), true);
+});
+
 test('remote clean only treats safe roots as cleanup candidates', () => {
   assert.equal(isRemoteCleanupCandidate('/tmp'), false);
   assert.equal(isRemoteCleanupCandidate('/var/tmp'), false);

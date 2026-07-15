@@ -39,7 +39,7 @@ export function createSeitonTool(toolOrchestrator = null) {
         target_path: {
           type: 'string',
           description: 'Цільовий шлях для організації або workspace tree',
-          default: '/root'
+          default: '.'
         },
         dry_run: {
           type: 'boolean',
@@ -64,7 +64,7 @@ export function createSeitonTool(toolOrchestrator = null) {
     },
 
     async execute(args) {
-      const { action, scope, target_path = '/root', dry_run = true, max_depth, max_files } = args;
+      const { action, scope, target_path = '.', dry_run = true, max_depth, max_files } = args;
 
       // 🌸 Новий workspace_tree action
       if (action === 'workspace_tree') {

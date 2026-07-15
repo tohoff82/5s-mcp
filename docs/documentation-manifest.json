@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "5s-mcp.documentation-manifest.v1",
+  "conflictRule": "Current canonical documents win over generated, supporting, deprecated, and historical material; runtime source wins over generated output.",
+  "documents": [
+    { "path": "README.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "onboarding" },
+    { "path": "SECURITY.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "vulnerability-reporting" },
+    { "path": "CONTRIBUTING.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "contribution" },
+    { "path": "TODO-LEAN-EXTENSIONS.md", "authority": "historical", "status": "deprecated", "metadata": true, "subject": "completed-implementation-plan" },
+
+    { "path": "docs/00-DOCUMENTATION-MAP.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "documentation-map" },
+    { "path": "docs/01-PROJECT-OVERVIEW.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "project-overview" },
+    { "path": "docs/02-ARCHITECTURE.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "architecture" },
+    { "path": "docs/03-CAPABILITY-AND-MODE-MATRIX.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "capability-matrix" },
+    { "path": "docs/04-TOOLS-REFERENCE.md", "authority": "generated", "status": "current", "metadata": true, "subject": "tool-reference" },
+    { "path": "docs/05-OPERATOR-GUIDE.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "operations" },
+    { "path": "docs/06-SECURITY-AND-TRUST-BOUNDARIES.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "security-model" },
+    { "path": "docs/07-MAINTENANCE-LIFECYCLE/README.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "maintenance-lifecycle-index" },
+    { "path": "docs/07-MAINTENANCE-LIFECYCLE/LOCAL-SEISO.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "local-cleanup-contract" },
+    { "path": "docs/07-MAINTENANCE-LIFECYCLE/REMOTE-CLEAN.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "remote-cleanup-contract" },
+    { "path": "docs/07-MAINTENANCE-LIFECYCLE/POLICY-AND-APPROVALS.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "policy-approval-contract" },
+    { "path": "docs/07-MAINTENANCE-LIFECYCLE/SCHEDULED-MAINTENANCE.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "scheduled-maintenance-contract" },
+    { "path": "docs/08-USAGE-EXAMPLES.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "examples" },
+    { "path": "docs/09-TROUBLESHOOTING.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "troubleshooting" },
+    { "path": "docs/10-DEVELOPMENT-AND-EXTENSION.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "development" },
+    { "path": "docs/11-CODEBASE-INVENTORY.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "codebase-inventory" },
+    { "path": "docs/12-RELEASE-AND-VERIFICATION.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "release-verification" },
+    { "path": "docs/13-UPSTREAM-WATCH.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "upstream-watch" },
+    { "path": "docs/14-DOCUMENTATION-GOVERNANCE.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "documentation-governance" },
+
+    { "path": "docs/README.md", "authority": "supporting", "status": "deprecated", "metadata": true, "subject": "documentation-map-compatibility-route" },
+    { "path": "docs/tools.md", "authority": "supporting", "status": "deprecated", "metadata": true, "subject": "tool-reference-compatibility-route" },
+    { "path": "docs/architecture.md", "authority": "supporting", "status": "deprecated", "metadata": true, "subject": "architecture-compatibility-route" },
+    { "path": "docs/operations.md", "authority": "supporting", "status": "deprecated", "metadata": true, "subject": "operations-compatibility-route" },
+    { "path": "docs/safety.md", "authority": "supporting", "status": "deprecated", "metadata": true, "subject": "security-compatibility-route" },
+    { "path": "docs/remote-clean.md", "authority": "supporting", "status": "deprecated", "metadata": true, "subject": "remote-clean-compatibility-route" },
+    { "path": "docs/PRODUCTION-HARDENING.md", "authority": "supporting", "status": "deprecated", "metadata": true, "subject": "hardening-compatibility-route" },
+    { "path": "docs/changelog.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "procedure-changelog" },
+    { "path": "docs/changes/5s-procedures/README.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "procedure-record-storage" },
+    { "path": "docs/changes/5s-procedures/CHANGELOG-FORMAT.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "procedure-record-format" },
+    { "path": "docs/changes/5s-procedures/MONGODB-INTEGRATION.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "optional-mongodb-sync" }
+  ],
+  "inherited": [
+    { "prefix": "docs/changes/", "authority": "historical", "status": "current", "subject": "procedure-records" },
+    { "prefix": "skills/5s-mcp/", "authority": "supporting", "status": "current", "subject": "agent-skill" }
+  ]
+}

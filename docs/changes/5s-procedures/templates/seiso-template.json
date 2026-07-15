@@ -1,15 +1,15 @@
 {
   "procedure": {
     "type": "seiso",
-    "name": "Очищення системи",
-    "description": "Регулярне прибирання та очищення системи від тимчасових файлів, логів, кешу",
+    "name": "Staged cleanup plan",
+    "description": "Plan-first Seiso cleanup with manifest, policy, backup, approval, and verification evidence",
     "category": "maintenance"
   },
   "changes": {
     "type": "optimize",
-    "what": "Тимчасові файли, логи, кеш, системні залишки",
-    "why": "Звільнення дискового простору, покращення продуктивності, запобігання переповненню",
-    "how": "Автоматизовані скрипти очищення, ротація логів, очищення кешу"
+    "what": "Exact reviewed manifest items from one persisted Seiso plan",
+    "why": "Remove bounded reclaimable state under policy control",
+    "how": "seiso_clean_system observe -> plan -> stage -> approved apply -> verify"
   },
   "impact": {
     "scope": "system",
@@ -26,18 +26,18 @@
   "technical": {
     "files_modified": [],
     "commands_executed": [
-      "journalctl --vacuum-time=30d",
-      "apt clean && apt autoclean",
-      "find /tmp -type f -atime +7 -delete",
-      "docker system prune -f"
+      "seiso_clean_system action=observe",
+      "seiso_clean_system action=plan",
+      "seiso_clean_system action=stage plan_id=<reviewed-plan-id>",
+      "seiso_clean_system action=apply plan_id=<reviewed-plan-id> approved=true"
     ],
     "services_affected": [],
-    "backup_location": "/backup/seiso",
-    "rollback_procedure": "Зазвичай не потрібен для очищення тимчасових файлів",
+    "backup_location": "<stage.backup.archive_path or documented not-required result>",
+    "rollback_procedure": "Restore reviewed file-manifest items from the staged archive; use a separate operator recovery for command effects",
     "validation_steps": [
-      "Перевірити доступний дисковий простір",
-      "Перевірити, що не видалені важливі файли",
-      "Перевірити працездатність системи"
+      "Compare before/after verification snapshots",
+      "Review every executed, skipped, and failed result",
+      "Record residual risk and any separate recovery requirement"
     ]
   },
   "human_resources": {
@@ -46,8 +46,8 @@
     "time_invested": 15
   },
   "status": {
-    "current": "completed",
-    "completion_percentage": 100,
+    "current": "planned",
+    "completion_percentage": 0,
     "maintenance_frequency": "weekly"
   },
   "tags": ["cleanup", "maintenance", "seiso", "system-hygiene"]

@@ -27,7 +27,7 @@ export function createSeiriTool() {
         path: {
           type: 'string',
           description: 'Шлях для аналізу файлів (опціонально)',
-          default: '/root'
+          default: '.'
         },
         criteria: {
           type: 'object',
@@ -54,7 +54,7 @@ export function createSeiriTool() {
     },
 
     async execute(args) {
-      const { target, path: targetPath = '/root', criteria = {} } = args;
+      const { target, path: targetPath = '.', criteria = {} } = args;
       const {
         age_days = 30,
         size_mb = 10,

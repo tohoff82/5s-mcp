@@ -9,26 +9,15 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 
-// Імпорт 5С інструментів
-import { createSeiriTool } from './tools/seiri.js';
-import { createSeitonTool } from './tools/seiton-enhanced.js';
-import { createSeisoTool } from './tools/seiso.js';
-import { createSeiketsuTool } from './tools/seiketsu.js';
-import { createShitsukeTool } from './tools/shitsuke.js';
-import { createSafetyPolicyTool } from './tools/safety-policy.js';
-import { createCronManagerTool } from './tools/cron-manager.js';
-import { createRemoteCleanTool } from './tools/remote-clean.js';
-import { createKaizenTool } from './tools/kaizen.js';
-import { createGembaTool } from './tools/gemba.js';
-import { createPokaYokeTool } from './tools/poka-yoke.js';
-import { createLeanOpsTool } from './tools/lean-ops.js';
+import { createRegisteredTools } from './tool-registry.js';
+import { PACKAGE_VERSION } from '../version.js';
 
 class FiveSMcpServer {
   constructor() {
     this.server = new Server(
       {
         name: '5s-methodology-server',
-        version: '1.1.0', // 🎯 Версія оновлена для Memory-Driven Workspace Tree
+        version: PACKAGE_VERSION,
       },
       {
         capabilities: {
@@ -58,6 +47,7 @@ class FiveSMcpServer {
           name: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema,
+          annotations: tool.annotations,
         })),
       };
     });
@@ -104,20 +94,7 @@ class FiveSMcpServer {
     this.tools.clear();
     
     // Реєструємо всі 5С інструменти
-    const tools = [
-      createSeiriTool(),                           // 整理 - Сортування
-      createSeitonTool(this.toolOrchestrator),     // 整頓 - Систематизація + Memory-Driven Workspace Tree 🌸
-      createSeisoTool(),                           // 清掃 - Прибирання
-      createSeiketsuTool(),                        // 清潔 - Стандартизація
-      createShitsukeTool(),                        // 躾 - Дотримання
-      createSafetyPolicyTool(),                    // Production safety policy
-      createCronManagerTool(),                     // Cron schedule management
-      createRemoteCleanTool(),                     // Remote cleanup mode
-      createKaizenTool(),                          // Kaizen continuous improvement
-      createGembaTool(),                           // Gemba read-only inspection
-      createPokaYokeTool(),                        // Poka-Yoke error prevention
-      createLeanOpsTool(),                         // Muda/Jidoka/Andon Lean operations
-    ];
+    const tools = createRegisteredTools({ toolOrchestrator: this.toolOrchestrator });
 
     tools.forEach(tool => {
       this.tools.set(tool.name, tool);

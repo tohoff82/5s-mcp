@@ -57,3 +57,12 @@ test('cron manager can read an existing cron file', async () => {
 
   await rm(tmp, { recursive: true, force: true });
 });
+
+test('cron manager checks safety policy before removal', async () => {
+  const tool = createCronManagerTool();
+
+  await assert.rejects(
+    () => tool.execute({ action: 'remove', cron_path: '/etc/ssh/5s.cron', dry_run: false }),
+    /Cron removal blocked by policy/
+  );
+});

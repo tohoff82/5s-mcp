@@ -100,6 +100,19 @@ export class MaintenanceExecutionEngine {
     const plan = await this.loadPlan(planId);
     const artifactPath = await this.writeArtifact(plan);
     const backup = await this.createBackup(plan);
+    if (backup.required && !backup.created) {
+      const failed = {
+        ...plan,
+        mode: 'stage_failed',
+        stage_failed_at: new Date().toISOString(),
+        stage_attempt: {
+          artifact_path: artifactPath,
+          backup
+        }
+      };
+      await this.savePlan(failed);
+      throw new Error(`Required backup was not created: ${backup.error || 'unknown backup failure'}`);
+    }
     const staged = {
       ...plan,
       mode: 'stage',
@@ -121,6 +134,9 @@ export class MaintenanceExecutionEngine {
     const plan = await this.loadPlan(planId);
     if (!plan.stage) {
       throw new Error('Plan must be staged before apply');
+    }
+    if (plan.stage.backup?.required && !plan.stage.backup.created) {
+      throw new Error('Plan backup is required but was not created');
     }
 
     const before = await this.captureVerification();
@@ -209,7 +225,10 @@ export class MaintenanceExecutionEngine {
   }
 
   async planTrash() {
-    const roots = ['/root/.local/share/Trash/files', '/root/.trash'];
+    const roots = [
+      path.join(os.homedir(), '.local', 'share', 'Trash', 'files'),
+      path.join(os.homedir(), '.trash')
+    ];
     const operations = [];
     for (const root of roots) {
       try {
@@ -380,7 +399,10 @@ export class MaintenanceExecutionEngine {
   }
 
   async observeTrash() {
-    return await Promise.all(['/root/.local/share/Trash', '/root/.trash'].map(root => this.observePath(root)));
+    return await Promise.all([
+      path.join(os.homedir(), '.local', 'share', 'Trash'),
+      path.join(os.homedir(), '.trash')
+    ].map(root => this.observePath(root)));
   }
 
   async observeCache() {
