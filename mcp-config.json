@@ -10,7 +10,7 @@
       }
     }
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "documentation": "docs/00-DOCUMENTATION-MAP.md",
   "toolsReference": "docs/04-TOOLS-REFERENCE.md"
 }

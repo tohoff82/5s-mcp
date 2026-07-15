@@ -3,7 +3,7 @@ document_id: 5S-DOC-README
 authority: canonical
 status: current
 source_of_truth: docs/00-DOCUMENTATION-MAP.md
-last_verified_commit: 04d75cabcef5da03a21c22982dbe45dacfa6844c
+last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
 audience: [user, operator]
 ---
 
@@ -11,7 +11,7 @@ audience: [user, operator]
 
 5S MCP is a local Node.js MCP server for evidence-driven 5S and Lean maintenance: observation, classification, plan-first cleanup, policy, cron, remote session cleanup, standards, health, prevention, and continuous improvement.
 
-Current source-backed surface: 12 tools in 1 ordered registry, 1 stdio entrypoint, Node.js >=18, 6 read-only tools, 2 mixed non-destructive tools, and 4 destructive-capable tools. Package and MCP handshake both use version `1.0.0`.
+Current source-backed surface: 12 tools in 1 ordered registry, 1 stdio entrypoint, Node.js >=18, 6 read-only tools, 2 mixed non-destructive tools, and 4 destructive-capable tools. Package and MCP handshake both use version `1.0.1`.
 
 ## Install and connect
 

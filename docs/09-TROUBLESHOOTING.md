@@ -3,7 +3,7 @@ document_id: 5S-DOC-TROUBLESHOOTING
 authority: canonical
 status: current
 source_of_truth: src, test, and package.json
-last_verified_commit: 04d75cabcef5da03a21c22982dbe45dacfa6844c
+last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
 audience: [user, operator, agent]
 ---
 
@@ -18,6 +18,7 @@ Use bounded/redacted MCP results, stderr, plan metadata, policy verdicts, and te
 | Platform result is unsupported | Linux-only utility/service absent | Shitsuke health, platform helper tests | choose a supported observation or host | treat unsupported as healthy success |
 | Target denied | deny rule or unsafe scope | policy `list` and `evaluate` | correct target or obtain separate policy-change authorization | weaken policy inside cleanup |
 | Seiso plan has blocked operations | deny match, risk, missing approval | inspect every verdict/reason | narrow targets and re-plan | edit saved plan JSON |
+| Seiso usage status is unexpectedly clear | `lsof` and `fuser` unavailable or failed | confirm at least one probe is available; review `preserve_days` and policy scope | restore an approved probe or treat usage as unknown and stop apply | treat `in_use=false` as proof when both probes failed |
 | Stage fails | backup directory/tool/permissions or archive error | inspect `stage_failed` and `stage_attempt.backup` | repair backup prerequisite and re-plan/stage | apply without successful required backup |
 | Apply partially succeeds | policy changed or operation error | results plus before/after verification | stop, assess residual state, use approved recovery | assume envelope success means every item ran |
 | Cron mutation blocked | destructive content, denied path, or permissions | render, validate, dry-run verdict | correct approved path/content/privilege | edit managed cron directly |

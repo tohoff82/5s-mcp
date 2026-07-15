@@ -7,7 +7,7 @@ import { TOOL_REGISTRATIONS, createRegisteredTools } from '../src/mcp-server/too
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputPath = join(repoRoot, 'docs/04-TOOLS-REFERENCE.md');
 const EXPECTED_TOOL_COUNT = 12;
-const LAST_VERIFIED_COMMIT = '04d75cabcef5da03a21c22982dbe45dacfa6844c';
+const LAST_VERIFIED_COMMIT = '9c8356ab10310197091d4b683cc06a3c917db84f';
 
 export function deriveTools() {
   const runtimeTools = createRegisteredTools();

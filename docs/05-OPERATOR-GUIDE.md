@@ -3,7 +3,7 @@ document_id: 5S-DOC-OPERATOR
 authority: canonical
 status: current
 source_of_truth: package.json, src/mcp-server/server.js, and config/safety-policy.json
-last_verified_commit: 04d75cabcef5da03a21c22982dbe45dacfa6844c
+last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
 audience: [operator]
 ---
 
@@ -34,6 +34,10 @@ Configure an MCP client with `node` plus the absolute path to `src/mcp-server/in
 3. Run `poka_yoke_guard` with a deliberate profile: `repo`, `docs`, `tests`, or strict `production`.
 4. Check host readiness using `5s-shitsuke` action `health` or `lean_ops` action `andon_status`.
 5. Stop when Jidoka reports a critical condition, policy returns `P4_FORBIDDEN`, required platform capabilities are unavailable, or evidence is incomplete.
+
+### File-in-use detection
+
+Local Seiso checks candidate files with `lsof` and then `fuser`. If both probes are unavailable or fail, the runtime records `in_use=false`; this is fail-open for that signal only and is not proof that the file is unused. Confirm at least one probe is available when open-file status matters, retain an appropriate `preserve_days` window and policy scope, and do not approve apply while material usage evidence is unknown.
 
 ## State and environment
 

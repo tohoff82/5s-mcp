@@ -1,6 +1,6 @@
 {
   "name": "5s-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "5S Methodology MCP Server - Lean manufacturing principles for server management",
   "main": "src/mcp-server/index.js",
   "type": "module",

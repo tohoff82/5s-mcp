@@ -3,7 +3,7 @@ document_id: 5S-DOC-SECURITY-MODEL
 authority: canonical
 status: current
 source_of_truth: src/safety-policy.js, src/maintenance-engine.js, and destructive-capable tool handlers
-last_verified_commit: 04d75cabcef5da03a21c22982dbe45dacfa6844c
+last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
 audience: [operator, maintainer, agent]
 ---
 
@@ -23,13 +23,14 @@ Assets include the policy file, plan/manifests, dry-run artifacts, backup lists/
 - Cron content rejects control-character/newline injection and destructive command classes. Install and remove default to dry-run and evaluate the selected path through safety policy before mutation.
 - Remote cleanup validates SSH target/evidence fields, does not echo raw command evidence, accepts only concrete descendants of configured safe roots, rejects broad roots and denied roots, builds manifest-only removal commands, defaults to dry-run, and requires approval for execution.
 - Gemba context redacts secret-like values, Poka-Yoke detects risky patterns, and platform helpers report unsupported capabilities instead of treating every host as Linux.
+- Call-tool failures from destructive-capable tools return a generic client error; the complete error is written to stderr for the operator.
 - MCP stdout is reserved for protocol data; operational diagnostics use stderr.
 
 ## Boundaries not provided
 
 - The server has no built-in user authentication, privilege separation, central rate limiter, universal audit wrapper, transaction manager, or automatic rollback coordinator.
 - JSON Schemas and annotations describe the surface; they are not permission checks. Individual handlers remain responsible for action validation and policy calls.
-- Redaction is scoped. Do not assume every tool result, host command output, changelog record, or error is secret-safe.
+- Redaction is scoped. Generic destructive-tool error envelopes do not make every tool result, host command output, changelog record, non-destructive-tool error, or stderr diagnostic secret-safe.
 - A successful file backup does not reverse package-manager, journal, service, cron, policy, or arbitrary host command effects.
 - Remote cleanup does not persist an immutable remote plan id and does not perform a complete post-clean remote audit. The caller must verify and record.
 - Running as root broadens impact. Policy cannot compensate for an untrusted MCP client or a malicious local/remote account.
