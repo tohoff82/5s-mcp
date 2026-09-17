@@ -179,6 +179,143 @@ async function handleInteraction(req, res, url) {
   return true;
 }
 
+function decodeJwtPayload(token) {
+  const parts = String(token).split('.');
+  if (parts.length !== 3) throw new Error('service access token is not a JWT');
+  return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+}
+
+async function parseMcpResponse(response) {
+  const text = await response.text();
+  if (!text) return null;
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) return JSON.parse(text);
+  if (contentType.includes('text/event-stream')) {
+    const messages = [];
+    for (const line of text.split(/\r?\n/)) {
+      if (!line.startsWith('data:')) continue;
+      const data = line.slice(5).trim();
+      if (!data || data === '[DONE]') continue;
+      try { messages.push(JSON.parse(data)); } catch {}
+    }
+    return messages.at(-1) ?? null;
+  }
+  throw new Error(`unsupported MCP response content-type: ${contentType}`);
+}
+
+async function mcpPost(token, payload, sessionId, protocolVersion) {
+  const headers = {
+    authorization: `Bearer ${token}`,
+    accept: 'application/json, text/event-stream',
+    'content-type': 'application/json',
+  };
+  if (sessionId) headers['mcp-session-id'] = sessionId;
+  if (protocolVersion) headers['mcp-protocol-version'] = protocolVersion;
+  const response = await fetch(resourceUri, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  return {
+    response,
+    payload: await parseMcpResponse(response),
+  };
+}
+
+async function runB2ServiceSelfProbe() {
+  const tokenResponse = await fetch(`${issuer}/token`, {
+    method: 'POST',
+    headers: {
+      authorization: `Basic ${Buffer.from(`${serviceClientId}:${serviceClientSecret}`).toString('base64')}`,
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      scope: serviceScope,
+      resource: resourceUri,
+    }),
+  });
+  const tokenBody = await tokenResponse.json();
+  if (!tokenResponse.ok) throw new Error(`token endpoint returned HTTP ${tokenResponse.status}`);
+  if (typeof tokenBody.access_token !== 'string' || !tokenBody.access_token) throw new Error('token endpoint returned no access token');
+  if (String(tokenBody.token_type || '').toLowerCase() !== 'bearer') throw new Error('token endpoint returned non-bearer token');
+  if (tokenBody.refresh_token) throw new Error('service token response unexpectedly contained refresh token');
+
+  const claims = decodeJwtPayload(tokenBody.access_token);
+  const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud].filter(Boolean);
+  const scope = typeof claims.scope === 'string' ? claims.scope.split(/\s+/).filter(Boolean) : [];
+  const claimsPass = claims.iss === issuer
+    && audience.includes(resourceUri)
+    && (claims.client_id === serviceClientId || claims.azp === serviceClientId)
+    && scope.length === 1
+    && scope[0] === serviceScope
+    && !scope.includes('mcp:tools')
+    && typeof claims.exp === 'number';
+  if (!claimsPass) throw new Error('service token claims did not match B2 contract');
+
+  const init = await mcpPost(tokenBody.access_token, {
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: {
+      protocolVersion: '2025-11-25',
+      capabilities: {},
+      clientInfo: { name: 'safeops-b2-self-probe', version: '0.1' },
+    },
+  });
+  if (init.response.status === 401 || init.response.status === 403) throw new Error(`SafeOps rejected valid service token with HTTP ${init.response.status}`);
+  if (!init.response.ok || !init.payload?.result) throw new Error(`SafeOps initialize failed with HTTP ${init.response.status}`);
+  const sessionId = init.response.headers.get('mcp-session-id');
+  if (!sessionId) throw new Error('SafeOps initialize returned no MCP session id');
+  const protocolVersion = init.payload.result.protocolVersion || '2025-11-25';
+
+  await mcpPost(tokenBody.access_token, {
+    jsonrpc: '2.0',
+    method: 'notifications/initialized',
+  }, sessionId, protocolVersion);
+
+  const inspect = await mcpPost(tokenBody.access_token, {
+    jsonrpc: '2.0',
+    id: 2,
+    method: 'tools/call',
+    params: {
+      name: 'safeops_inspect_workspace',
+      arguments: { target_id: 'b2-service-no-actor-probe' },
+    },
+  }, sessionId, protocolVersion);
+  const actorBoundaryMessage = inspect.payload?.error?.message || '';
+  const actorBoundaryPass = actorBoundaryMessage.includes('Authenticated ActorContext is required');
+  if (!actorBoundaryPass) throw new Error('service token unexpectedly crossed ActorContext boundary');
+
+  return {
+    verdict: 'PASS',
+    token_http_status: tokenResponse.status,
+    token_type: 'Bearer',
+    refresh_token_absent: true,
+    claims: {
+      iss_match: claims.iss === issuer,
+      resource_match: audience.includes(resourceUri),
+      client_match: claims.client_id === serviceClientId || claims.azp === serviceClientId,
+      scope,
+      has_sub: typeof claims.sub === 'string' && claims.sub.length > 0,
+      exp_present: typeof claims.exp === 'number',
+    },
+    mcp_initialize: {
+      http_status: init.response.status,
+      session_id_returned: true,
+      protocol_version: protocolVersion,
+      server_name: init.payload.result.serverInfo?.name || null,
+      auth_accepted: true,
+    },
+    actor_boundary: {
+      inspect_http_status: inspect.response.status,
+      service_token_has_user_scope: scope.includes('mcp:tools'),
+      actor_context_rejected: true,
+      error_match: actorBoundaryPass,
+    },
+  };
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, issuer);
@@ -195,4 +332,13 @@ const server = http.createServer(async (req, res) => {
 
 const host = process.env.HOST || '0.0.0.0';
 const port = Number(process.env.PORT || 8080);
-server.listen(port, host, () => console.error(`[SafeOps OAuth Lab] listening on ${host}:${port} issuer=${issuer}`));
+server.listen(port, host, () => {
+  console.error(`[SafeOps OAuth Lab] listening on ${host}:${port} issuer=${issuer}`);
+  if (process.env.B2_SELF_PROBE === 'true') {
+    setTimeout(() => {
+      runB2ServiceSelfProbe()
+        .then(result => console.error(`[B2_SELF_PROBE] ${JSON.stringify(result)}`))
+        .catch(error => console.error(`[B2_SELF_PROBE] ${JSON.stringify({ verdict: 'FAIL', reason: error instanceof Error ? error.message : String(error) })}`));
+    }, 1500);
+  }
+});
