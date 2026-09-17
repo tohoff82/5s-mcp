@@ -17,13 +17,22 @@ const userClientSecret = required('USER_CLIENT_SECRET');
 const labUser = required('LAB_USER');
 const labPassword = required('LAB_PASSWORD');
 const cookieKey = required('COOKIE_KEY');
-const jwks = JSON.parse(required('JWKS_JSON'));
 const redirectUris = JSON.parse(required('USER_REDIRECT_URIS_JSON'));
 
 if (!Array.isArray(redirectUris) || redirectUris.length === 0) throw new Error('USER_REDIRECT_URIS_JSON must be a non-empty JSON array');
 new URL(issuer);
 new URL(resourceUri);
 for (const uri of redirectUris) new URL(uri);
+
+const { privateKey } = crypto.generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicExponent: 0x10001,
+});
+const signingJwk = privateKey.export({ format: 'jwk' });
+signingJwk.kid = crypto.randomBytes(12).toString('base64url');
+signingJwk.use = 'sig';
+signingJwk.alg = 'RS256';
+const jwks = { keys: [signingJwk] };
 
 const serviceScope = 'mcp:service';
 const userScopes = ['mcp:tools', 'mcp:resources', 'safeops:read', 'safeops:apply'];
@@ -152,7 +161,9 @@ async function handleInteraction(req, res, url) {
     if (details.prompt.name !== 'consent') throw new Error('consent prompt not active');
     const { params, prompt: { details: missing }, session } = details;
     let { grantId } = details;
-    let grant = grantId ? await provider.Grant.find(grantId) : new provider.Grant({ accountId: session.accountId, clientId: params.client_id });
+    const grant = grantId
+      ? await provider.Grant.find(grantId)
+      : new provider.Grant({ accountId: session.accountId, clientId: params.client_id });
     if (missing.missingOIDCScope) grant.addOIDCScope(missing.missingOIDCScope.join(' '));
     if (missing.missingOIDCClaims) grant.addOIDCClaims(missing.missingOIDCClaims);
     if (missing.missingResourceScopes) {
