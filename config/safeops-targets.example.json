@@ -1,0 +1,19 @@
+{
+  "schema": "safeops-target-registry.v1",
+  "targets": {
+    "demo": {
+      "root": "/absolute/path/to/safeops-c0-fixture",
+      "actor_ids": [
+        "replace-with-authorized-oauth-subject"
+      ],
+      "enabled": true,
+      "capability_profile": "safeops-c0",
+      "policy_profile": "5s-default",
+      "engine_targets": {
+        "safe": "safe",
+        "review": "review",
+        "denied": "denied"
+      }
+    }
+  }
+}

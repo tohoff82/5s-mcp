@@ -2,8 +2,8 @@
 document_id: 5S-DOC-CAPABILITY-MATRIX
 authority: canonical
 status: current
-source_of_truth: src/mcp-server/tool-registry.js and tool inputSchema objects
-last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
+source_of_truth: src/mcp-server/tool-registry.js, tool inputSchema objects, and src/safeops/server.js
+last_verified_commit: worktree-based-on-87a810c1969825b52c4d9f8c554b04d827c978a7
 audience: [user, operator, maintainer, agent]
 ---
 
@@ -44,3 +44,16 @@ The class below is conservative at tool level. Use the [generated reference](04-
 | Change maintenance policy | `5s_safety_policy` with explicit operator scope | editing policy during an unrelated cleanup call |
 | Change cron state | `5s_cron_manager` render/validate then scoped mutation | direct cron file editing |
 | Clean remote session artifacts | `5s_remote_clean` with evidence and dry-run first | broad safe-root deletion or a free-form remote shell |
+
+
+## Separate SafeOps C0 candidate surface
+
+The legacy counts above remain **12 tools**. SafeOps does not extend that registry; it owns a separate three-tool MCP server.
+
+| SafeOps tool | Class | Authority boundary |
+|---|---|---|
+| `safeops_inspect_workspace` | read/plan workflow | authenticated actor + registered target; no target effect |
+| `safeops_apply_safe_actions` | destructive-capable | exact current plan digest + SAFE subset + fresh approval + current 5S policy + staged prerequisites |
+| `safeops_explain_workflow` | read-only | same actor/target workflow binding; reads persisted evidence only |
+
+A model-supplied `actor_id` or `approved=true` is not part of these schemas. Runtime actor identity comes from validated auth context, and effect approval comes from an injected approval carrier rather than tool arguments.

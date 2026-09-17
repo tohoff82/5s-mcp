@@ -37,7 +37,8 @@
     { "path": "docs/changelog.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "procedure-changelog" },
     { "path": "docs/changes/5s-procedures/README.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "procedure-record-storage" },
     { "path": "docs/changes/5s-procedures/CHANGELOG-FORMAT.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "procedure-record-format" },
-    { "path": "docs/changes/5s-procedures/MONGODB-INTEGRATION.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "optional-mongodb-sync" }
+    { "path": "docs/changes/5s-procedures/MONGODB-INTEGRATION.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "optional-mongodb-sync" },
+    { "path": "docs/hackathon/AMAZON-ALEXA-SEED-VERIFICATION-SOURCE-SPEC-v0.1.md", "authority": "supporting", "status": "current", "metadata": false, "subject": "hackathon-seed-verification-source-spec" }
   ],
   "inherited": [
     { "prefix": "docs/changes/", "authority": "historical", "status": "current", "subject": "procedure-records" },

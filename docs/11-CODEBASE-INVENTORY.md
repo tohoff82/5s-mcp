@@ -3,7 +3,7 @@ document_id: 5S-DOC-CODEBASE
 authority: canonical
 status: current
 source_of_truth: repository tree
-last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
+last_verified_commit: worktree-based-on-87a810c1969825b52c4d9f8c554b04d827c978a7
 audience: [maintainer, agent]
 ---
 
@@ -19,11 +19,15 @@ audience: [maintainer, agent]
 | `src/safety-policy.js` | policy storage, matching, risk, and verdicts |
 | `src/platform-capabilities.js` | platform-aware host capability normalization |
 | `src/changelog/` | filesystem procedure records and optional MongoDB sync |
+| `src/safeops/server.js`, `src/safeops/tools/` | separate three-tool SafeOps workflow MCP surface; legacy registry is not imported |
+| `src/safeops/http.js`, `src/safeops/auth/` | Streamable HTTP resource-server boundary, PRM, token validation, service/user context split |
+| `src/safeops/targets/`, `src/safeops/workflow/` | actor-target registry, workflow/evidence store, plan digest, approval, classification, verification, explanation |
+| `src/safeops/five-s/bridge.js` | sole SafeOps adapter to inherited 5S execution primitives |
 | `changelog.config.js`, `create_todays_changelog.js` | optional ESM defaults and a fail-closed route away from the retired unverifiable record generator |
 | `src/utils/` | workspace-tree and memory helpers |
-| `config/` | versioned runtime defaults, including safety policy |
+| `config/` | versioned runtime defaults plus non-secret `safeops-targets.example.json`; real actor-target bindings remain deployment data |
 | `test/` | Node test contracts for registration, safety controls, tools, platform behavior |
-| `scripts/` | generated tool reference, Poka-Yoke repo validation, link gate, documentation authority/verifier gates |
+| `scripts/` | generated tool reference, Poka-Yoke repo validation, link/documentation gates, and marker-bound SafeOps fixture helper |
 | `docs/00..14` | canonical documentation membrane; `04` is generated |
 | `docs/07-MAINTENANCE-LIFECYCLE/` | state-changing maintenance contracts |
 | `docs/changes/5s-procedures/` | supporting formats and historical procedure records |

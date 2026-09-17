@@ -2,8 +2,8 @@
 document_id: 5S-DOC-ARCHITECTURE
 authority: canonical
 status: current
-source_of_truth: src/mcp-server/server.js and src/mcp-server/tool-registry.js
-last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
+source_of_truth: src/mcp-server/server.js, src/mcp-server/tool-registry.js, and src/safeops/
+last_verified_commit: worktree-based-on-87a810c1969825b52c4d9f8c554b04d827c978a7
 audience: [operator, maintainer, agent]
 ---
 
@@ -44,3 +44,25 @@ Defaults include `config/safety-policy.json`, `/tmp/5s-plans`, `/backup/5s`, `/t
 ## Extension boundary
 
 A normal finite read-only tool can use the existing registry/factory pattern. A new destructive action, persistent process, credential form, remote transport, policy relaxation, state format, package entrypoint, or trust boundary requires architecture and security review before documentation claims are updated.
+
+
+## SafeOps C0 construction candidate
+
+The Alexa+ hackathon increment is physically separate from the inherited stdio registry. `src/safeops/server.js` exposes exactly three workflow tools and never imports the legacy 12-tool registry. `src/safeops/http.js` provides a stateless Streamable HTTP carrier; validated HTTP auth becomes SDK `AuthInfo`, then service and optional actor context. `TargetRegistry` binds the actor to an operator-configured workspace before planning.
+
+```mermaid
+flowchart LR
+  A["Alexa+/MCP client"] -->|"Bearer + Streamable HTTP"| H["SafeOps HTTP boundary"]
+  H --> I["service/user context"]
+  I --> T["TargetRegistry"]
+  T --> W["workflow + evidence store"]
+  W --> P["inspect / classify / bounded approval"]
+  P --> B["5S bridge"]
+  B --> E["MaintenanceExecutionEngine"]
+  E --> V["SafeOps verification"]
+  V --> X["evidence-backed explanation"]
+```
+
+The inherited engine now supports optional bounded target profiles and exact operation subsets. With no target profile or operation subset, legacy behavior remains available to the inherited stdio surface. SafeOps always supplies both boundaries for effectful use. `ExecutableSet <= Approved SAFE Set`; REVIEW and DENIED actions cannot enter ordinary SafeOps approval.
+
+The current branch proves only local Phase A construction. External authorization-server conformance, Alexa account linking, real elicitation, remote deployment, and independent validation remain later gates.

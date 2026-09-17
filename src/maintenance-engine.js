@@ -17,13 +17,18 @@ export class MaintenanceExecutionEngine {
     this.plansDir = options.plansDir || process.env.FIVE_S_PLANS_DIR || DEFAULT_PLANS_DIR;
     this.backupDir = options.backupDir || process.env.FIVE_S_BACKUP_DIR || DEFAULT_BACKUP_DIR;
     this.policy = options.policy || new SafetyPolicyManager();
+    this.targetProfile = normalizeTargetProfile(options.targetProfile);
   }
 
   async observe(targets, options = {}) {
-    const normalizedTargets = normalizeTargets(targets);
+    const normalizedTargets = normalizeTargets(targets, this.targetProfile);
     const observations = {};
 
     for (const target of normalizedTargets) {
+      if (this.targetProfile) {
+        observations[target] = await this.observePath(this.targetProfile.targets[target].root);
+        continue;
+      }
       if (target === 'temp') observations.temp = await this.observePath('/tmp');
       if (target === 'logs') observations.logs = await this.observePath('/var/log');
       if (target === 'trash') observations.trash = await this.observeTrash();
@@ -42,7 +47,7 @@ export class MaintenanceExecutionEngine {
   }
 
   async createPlan(targets, options = {}) {
-    const normalizedTargets = normalizeTargets(targets);
+    const normalizedTargets = normalizeTargets(targets, this.targetProfile);
     const preserveDays = options.preserve_days ?? 7;
     const aggressiveLevel = options.aggressive_level ?? 2;
     const plan = {
@@ -96,10 +101,12 @@ export class MaintenanceExecutionEngine {
     return plan;
   }
 
-  async stagePlan(planId) {
+  async stagePlan(planId, options = {}) {
     const plan = await this.loadPlan(planId);
-    const artifactPath = await this.writeArtifact(plan);
-    const backup = await this.createBackup(plan);
+    const selection = selectPlanOperations(plan, options.operationIds);
+    const stagedScope = scopePlanToOperations(plan, selection.operations);
+    const artifactPath = await this.writeArtifact(stagedScope);
+    const backup = await this.createBackup(stagedScope);
     if (backup.required && !backup.created) {
       const failed = {
         ...plan,
@@ -107,7 +114,9 @@ export class MaintenanceExecutionEngine {
         stage_failed_at: new Date().toISOString(),
         stage_attempt: {
           artifact_path: artifactPath,
-          backup
+          backup,
+          operation_ids: selection.ids,
+          explicit_operation_subset: selection.explicit
         }
       };
       await this.savePlan(failed);
@@ -119,7 +128,9 @@ export class MaintenanceExecutionEngine {
       staged_at: new Date().toISOString(),
       stage: {
         artifact_path: artifactPath,
-        backup
+        backup,
+        operation_ids: selection.ids,
+        explicit_operation_subset: selection.explicit
       }
     };
     await this.savePlan(staged);
@@ -139,10 +150,23 @@ export class MaintenanceExecutionEngine {
       throw new Error('Plan backup is required but was not created');
     }
 
-    const before = await this.captureVerification();
-    const results = [];
+    const selection = selectPlanOperations(plan, options.operationIds);
+    if (plan.stage.explicit_operation_subset) {
+      if (!selection.explicit) {
+        throw new Error('operationIds is required to apply an explicitly staged operation subset');
+      }
+      if (!sameOperationIds(selection.ids, plan.stage.operation_ids || [])) {
+        throw new Error('Apply operationIds must exactly match the staged operation subset');
+      }
+    }
 
-    for (const operation of plan.operations) {
+    const before = await this.captureVerification();
+    const selectedIds = new Set(selection.ids);
+    const results = plan.operations
+      .filter(operation => !selectedIds.has(operation.id))
+      .map(operation => ({ id: operation.id, skipped: true, reason: 'Not selected for execution' }));
+
+    for (const operation of selection.operations) {
       const verdict = await this.policy.evaluateOperation({
         command: operation.command,
         paths: operation.paths || [],
@@ -171,6 +195,10 @@ export class MaintenanceExecutionEngine {
       applied_at: new Date().toISOString(),
       verification: { before, after },
       results,
+      execution_scope: {
+        operation_ids: selection.ids,
+        explicit_operation_subset: selection.explicit
+      },
       space_freed_bytes: results.reduce((sum, item) => sum + (item.removed_bytes || 0), 0)
     };
     await this.savePlan(applied);
@@ -178,6 +206,11 @@ export class MaintenanceExecutionEngine {
   }
 
   async planTarget(target, options) {
+    if (this.targetProfile) {
+      const profileTarget = this.targetProfile.targets[target];
+      return [await this.planFileRemoval(`profile_${target}`, profileTarget.root, options.preserveDays, profileTarget.patterns)];
+    }
+
     switch (target) {
       case 'logs':
         return [await this.planFileRemoval('old_rotated_logs', '/var/log', options.preserveDays, ['*.log.*', '*.log.gz', '*.gz'])];
@@ -438,10 +471,108 @@ export class MaintenanceExecutionEngine {
   }
 }
 
-function normalizeTargets(targets) {
+function selectPlanOperations(plan, operationIds) {
+  const operations = Array.isArray(plan.operations) ? plan.operations : [];
+  if (operationIds === undefined) {
+    return { operations, ids: operations.map(operation => operation.id), explicit: false };
+  }
+  if (!Array.isArray(operationIds)) {
+    throw new Error('operationIds must be an array when provided');
+  }
+  if (operationIds.some(id => typeof id !== 'string' || id.length === 0)) {
+    throw new Error('operationIds must contain non-empty strings');
+  }
+  const unique = [...new Set(operationIds)];
+  if (unique.length !== operationIds.length) {
+    throw new Error('operationIds must not contain duplicates');
+  }
+  const byId = new Map(operations.map(operation => [operation.id, operation]));
+  const unknown = unique.filter(id => !byId.has(id));
+  if (unknown.length > 0) {
+    throw new Error(`Unknown operation id: ${unknown.join(', ')}`);
+  }
+  return { operations: unique.map(id => byId.get(id)), ids: unique, explicit: true };
+}
+
+function scopePlanToOperations(plan, operations) {
+  return {
+    ...plan,
+    operations,
+    manifest: operations.flatMap(operation => operation.manifest || [])
+  };
+}
+
+function sameOperationIds(left, right) {
+  if (left.length !== right.length) return false;
+  const rightSet = new Set(right);
+  return left.every(id => rightSet.has(id));
+}
+
+function normalizeTargets(targets, targetProfile = null) {
   const input = Array.isArray(targets) ? targets : [targets || 'all'];
+
+  if (targetProfile) {
+    const registered = Object.keys(targetProfile.targets);
+    const normalized = input.includes('all') ? registered : input;
+    const unknown = normalized.filter(target => !Object.hasOwn(targetProfile.targets, target));
+    if (unknown.length > 0) {
+      throw new Error(`Target is not registered in target profile: ${unknown.join(', ')}`);
+    }
+    return normalized;
+  }
+
   if (input.includes('all')) return ['cache', 'logs', 'temp', 'packages', 'journal', 'trash'];
   return input;
+}
+
+function normalizeTargetProfile(profile) {
+  if (profile === undefined || profile === null) return null;
+  if (typeof profile !== 'object' || Array.isArray(profile)) {
+    throw new Error('targetProfile must be an object');
+  }
+  if (typeof profile.root !== 'string' || !path.isAbsolute(profile.root)) {
+    throw new Error('targetProfile.root must be an absolute path');
+  }
+  if (!profile.targets || typeof profile.targets !== 'object' || Array.isArray(profile.targets)) {
+    throw new Error('targetProfile.targets must be an object');
+  }
+
+  const root = path.resolve(profile.root);
+  const entries = Object.entries(profile.targets);
+  if (entries.length === 0) {
+    throw new Error('targetProfile.targets must contain at least one target');
+  }
+
+  const normalizedTargets = {};
+  for (const [name, rawDescriptor] of entries) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(name)) {
+      throw new Error(`Invalid target profile name: ${name}`);
+    }
+
+    const descriptor = typeof rawDescriptor === 'string'
+      ? { path: rawDescriptor }
+      : rawDescriptor;
+    if (!descriptor || typeof descriptor !== 'object' || Array.isArray(descriptor)) {
+      throw new Error(`Invalid target profile descriptor: ${name}`);
+    }
+    if (typeof descriptor.path !== 'string' || descriptor.path.trim() === '' || path.isAbsolute(descriptor.path)) {
+      throw new Error(`Target profile path must be a relative path: ${name}`);
+    }
+
+    const resolvedRoot = path.resolve(root, descriptor.path);
+    if (resolvedRoot !== root && !resolvedRoot.startsWith(`${root}${path.sep}`)) {
+      throw new Error(`Target profile path escapes root: ${name}`);
+    }
+
+    const patterns = descriptor.patterns ?? ['*'];
+    if (!Array.isArray(patterns) || patterns.length === 0 || patterns.some(pattern => typeof pattern !== 'string' || pattern.length === 0)) {
+      throw new Error(`Target profile patterns must be a non-empty string array: ${name}`);
+    }
+
+    normalizedTargets[name] = { root: resolvedRoot, patterns: [...patterns] };
+  }
+
+  return { root, targets: Object.freeze(normalizedTargets) };
 }
 
 async function walkFiles(root, limit) {

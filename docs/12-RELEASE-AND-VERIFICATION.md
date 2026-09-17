@@ -3,7 +3,7 @@ document_id: 5S-DOC-RELEASE
 authority: canonical
 status: current
 source_of_truth: package.json, package-lock.json, test, and scripts
-last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
+last_verified_commit: worktree-based-on-87a810c1969825b52c4d9f8c554b04d827c978a7
 audience: [maintainer, release-owner]
 ---
 
@@ -44,3 +44,19 @@ Documentation closure requires:
 - no private-key markers in canonical material.
 
 For a documentation-only change, prove the runtime source diff is empty. If runtime was changed to reconcile a documented safety boundary, identify the exact invariant, tests, and source diff as a mixed documentation/runtime change.
+
+
+## SafeOps Phase A candidate gates
+
+The SafeOps construction branch adds local checks without changing the inherited 12-tool documentation membrane:
+
+```sh
+npm run safeops:test
+node scripts/safeops-fixture.mjs create
+node scripts/safeops-fixture.mjs verify
+node scripts/safeops-fixture.mjs reset
+```
+
+Local SafeOps PASS demonstrates only repository construction and controlled-fixture behavior. It does not prove real Alexa transport negotiation beyond the local SDK carrier test, external authorization-server conformance, account linking, customer elicitation/approval, public deployment, independent validation, `SAFEOPS_C0` acceptance, or production readiness. Those are separate governed phases.
+
+The SafeOps HTTP/auth code introduces no new direct dependency in Phase A; `package-lock.json` should remain unchanged. A dependency or lockfile delta requires separate review under the accepted construction boundary.

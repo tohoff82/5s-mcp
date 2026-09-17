@@ -3,7 +3,7 @@ document_id: 5S-DOC-README
 authority: canonical
 status: current
 source_of_truth: docs/00-DOCUMENTATION-MAP.md
-last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
+last_verified_commit: worktree-based-on-87a810c1969825b52c4d9f8c554b04d827c978a7
 audience: [user, operator]
 ---
 
@@ -12,6 +12,8 @@ audience: [user, operator]
 5S MCP is a local Node.js MCP server for evidence-driven 5S and Lean maintenance: observation, classification, plan-first cleanup, policy, cron, remote session cleanup, standards, health, prevention, and continuous improvement.
 
 Current source-backed surface: 12 tools in 1 ordered registry, 1 stdio entrypoint, Node.js >=18, 6 read-only tools, 2 mixed non-destructive tools, and 4 destructive-capable tools. Package and MCP handshake both use version `1.0.1`.
+
+The Amazon Alexa+ SafeOps C0 construction branch adds a **separate** candidate surface without changing that legacy registry: 3 workflow tools over authenticated Streamable HTTP (`safeops_inspect_workspace`, `safeops_apply_safe_actions`, `safeops_explain_workflow`), explicit actor-to-target binding, exact SAFE-operation approval scope, append-oriented workflow evidence, and post-effect verification. This is a local Phase A implementation candidate only; real Alexa+, OAuth-provider, elicitation, deployment, and baseline acceptance remain outside the current repository-construction claim.
 
 ## Install and connect
 
@@ -58,3 +60,14 @@ Tool annotations are conservative hints, not authorization. Run with least privi
 ```sh
 npm run docs:verify
 ```
+
+## SafeOps local construction checks
+
+```sh
+npm run safeops:test
+npm run safeops:fixture:create
+npm run safeops:fixture:verify
+npm run safeops:fixture:reset
+```
+
+The fixture commands operate only on a marker-bound `safeops-c0-fixture*` directory. Test approval and fixture policy data are laboratory evidence, not Alexa approval or production authority.

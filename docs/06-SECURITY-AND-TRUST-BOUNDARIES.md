@@ -2,8 +2,8 @@
 document_id: 5S-DOC-SECURITY-MODEL
 authority: canonical
 status: current
-source_of_truth: src/safety-policy.js, src/maintenance-engine.js, and destructive-capable tool handlers
-last_verified_commit: 9c8356ab10310197091d4b683cc06a3c917db84f
+source_of_truth: src/safety-policy.js, src/maintenance-engine.js, destructive-capable tool handlers, and src/safeops/
+last_verified_commit: worktree-based-on-87a810c1969825b52c4d9f8c554b04d827c978a7
 audience: [operator, maintainer, agent]
 ---
 
@@ -40,3 +40,20 @@ Assets include the policy file, plan/manifests, dry-run artifacts, backup lists/
 Read-only annotations are hints, not authorization. Local cleanup apply, policy add/remove/reset, cron install/remove/reload, remote cleanup, Kaizen backlog writes, and Shitsuke evidence writes require operator-approved scope. Never expose private keys, identity-file contents, credentials, tokens, unredacted environment data, or sensitive host output in MCP responses, documentation, procedure records, or handoffs.
 
 Stop on a deny verdict, missing evidence, failed required backup, unsupported platform gate, unknown target, or verification regression. Correct scope/configuration or escalate; do not weaken a failed safety boundary as remediation. Report vulnerabilities through root [`SECURITY.md`](../SECURITY.md).
+
+
+## SafeOps trust membrane (C0 construction candidate)
+
+SafeOps adds boundaries that the inherited local stdio server intentionally does not provide:
+
+- Streamable HTTP is protected by a required external-token verifier; unconfigured auth fails closed.
+- Service identity and user identity are separate. A valid service token can establish service context but does not create an `ActorContext` without a validated subject and required user scope.
+- A valid actor is still not a target authority. `TargetRegistry` binds that actor to one configured target profile; model-supplied arbitrary filesystem roots are not trusted.
+- Plans are SHA-256 bound to execution-relevant material. A changed plan requires new approval.
+- Ordinary approval can contain only operations currently classified SAFE. REVIEW and DENIED remain outside the approval set.
+- SafeOps calls the inherited engine with an exact operation subset. Unknown ids fail closed, an empty subset means no effect, and apply must match an explicitly staged subset.
+- Approval is single-attempt: consumption is represented by an immutable consumption marker before effect execution.
+- Workflow evidence is append-oriented; historical approval evidence is not equivalent to current authority.
+- SafeOps verification independently compares approved scope and reported execution scope before claiming verified success.
+
+The committed local test approval provider and fixture-specific policy are laboratory-only. They are not real Alexa customer approval, OAuth-provider conformance, production credentials, or production promotion evidence.

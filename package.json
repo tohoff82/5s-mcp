@@ -41,7 +41,12 @@
     "poka:validate": "node scripts/validate-poka-yoke.mjs",
     "audit:prod": "npm audit --omit=dev --audit-level=moderate",
     "pack:dry-run": "npm pack --dry-run",
-    "verify": "npm run check && npm test && npm run docs:links && npm run docs:verify && npm run poka:validate && npm run audit:prod && npm run pack:dry-run"
+    "verify": "npm run check && npm test && npm run docs:links && npm run docs:verify && npm run poka:validate && npm run audit:prod && npm run pack:dry-run",
+    "safeops:test": "node --test test/safeops/*.test.js",
+    "safeops:fixture:create": "node scripts/safeops-fixture.mjs create",
+    "safeops:fixture:verify": "node scripts/safeops-fixture.mjs verify",
+    "safeops:fixture:reset": "node scripts/safeops-fixture.mjs reset",
+    "safeops:start": "node src/safeops/bootstrap.js"
   },
   "keywords": [
     "5S",
