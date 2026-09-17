@@ -7,7 +7,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node launcher.mjs"
   },
   "dependencies": {
     "oidc-provider": "9.11.2"
