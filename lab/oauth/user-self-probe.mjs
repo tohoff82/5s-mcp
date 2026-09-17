@@ -7,6 +7,7 @@ const required = (name) => {
 };
 
 const issuer = required('AUTH_ISSUER');
+const issuerUrl = new URL(issuer);
 const resourceUri = required('RESOURCE_URI');
 const userClientId = required('USER_CLIENT_ID');
 const userClientSecret = required('USER_CLIENT_SECRET');
@@ -19,6 +20,9 @@ const cookies = new Map();
 
 function cookieHeader() {
   return [...cookies.entries()].map(([name, value]) => `${name}=${value}`).join('; ');
+}
+function cookieNames() {
+  return [...cookies.keys()].sort();
 }
 function storeCookies(headers) {
   const values = typeof headers.getSetCookie === 'function'
@@ -46,10 +50,23 @@ function absolute(location) {
   if (!location) throw new Error('expected redirect location');
   return new URL(location, issuer).toString();
 }
+function classifyUrl(value) {
+  const url = new URL(value, issuer);
+  let pathClass = 'other';
+  if (url.pathname === '/auth') pathClass = 'authorize';
+  else if (url.pathname.startsWith('/auth/')) pathClass = 'authorization_resume';
+  else if (url.pathname.startsWith('/interaction/')) pathClass = 'interaction';
+  else if (url.origin + url.pathname === new URL(redirectUri).origin + new URL(redirectUri).pathname) pathClass = 'registered_callback';
+  return {
+    scheme: url.protocol,
+    issuer_origin_match: url.origin === issuerUrl.origin,
+    path_class: pathClass,
+  };
+}
 function uidFromInteraction(location) {
   const url = new URL(location, issuer);
   const match = url.pathname.match(/^\/interaction\/([^/]+)$/);
-  if (!match) throw new Error(`expected interaction redirect, got ${url.pathname}`);
+  if (!match) throw new Error(`expected interaction redirect, got path class ${classifyUrl(url).path_class}`);
   return match[1];
 }
 function verifier() {
@@ -145,9 +162,12 @@ const login = await request(new URL(`/interaction/${uid}/login`, issuer), {
 });
 if (![302, 303].includes(login.status)) throw new Error(`login interaction returned HTTP ${login.status}`);
 location = absolute(login.headers.get('location'));
+const loginRedirectClass = classifyUrl(location);
 
 let resume = await request(location);
-if (![302, 303].includes(resume.status)) throw new Error(`post-login resume returned HTTP ${resume.status}`);
+if (![302, 303].includes(resume.status)) {
+  throw new Error(`post-login resume HTTP ${resume.status}; redirect=${JSON.stringify(loginRedirectClass)}; response=${JSON.stringify(classifyUrl(resume.url))}; cookies=${JSON.stringify(cookieNames())}; content_type=${resume.headers.get('content-type') || 'none'}`);
+}
 location = absolute(resume.headers.get('location'));
 uid = uidFromInteraction(location);
 
@@ -158,9 +178,12 @@ const consent = await request(new URL(`/interaction/${uid}/confirm`, issuer), {
 });
 if (![302, 303].includes(consent.status)) throw new Error(`consent interaction returned HTTP ${consent.status}`);
 location = absolute(consent.headers.get('location'));
+const consentRedirectClass = classifyUrl(location);
 
 resume = await request(location);
-if (![302, 303].includes(resume.status)) throw new Error(`post-consent resume returned HTTP ${resume.status}`);
+if (![302, 303].includes(resume.status)) {
+  throw new Error(`post-consent resume HTTP ${resume.status}; redirect=${JSON.stringify(consentRedirectClass)}; response=${JSON.stringify(classifyUrl(resume.url))}; cookies=${JSON.stringify(cookieNames())}; content_type=${resume.headers.get('content-type') || 'none'}`);
+}
 location = absolute(resume.headers.get('location'));
 const callback = new URL(location);
 if (callback.origin + callback.pathname !== new URL(redirectUri).origin + new URL(redirectUri).pathname) throw new Error('authorization did not return to registered redirect URI');
