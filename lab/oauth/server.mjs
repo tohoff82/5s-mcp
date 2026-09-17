@@ -44,6 +44,8 @@ const provider = new Provider(issuer, {
       client_id: serviceClientId,
       client_secret: serviceClientSecret,
       grant_types: ['client_credentials'],
+      response_types: [],
+      redirect_uris: [],
       token_endpoint_auth_method: 'client_secret_basic',
       scope: serviceScope,
     },
