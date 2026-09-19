@@ -1,4 +1,5 @@
 import { deriveControls } from './ui-state.js';
+import { summarizePlan, summarizeApply, summarizeExplanation, technicalReceipt } from './presentation.js';
 
 const statusDot = document.querySelector('#status-dot');
 const statusTitle = document.querySelector('#status-title');
@@ -178,24 +179,7 @@ function resetSignals() {
 }
 
 function showResult(data) {
-  result.textContent = JSON.stringify(data, null, 2);
-}
-
-function summarizePlan(data) {
-  return [
-    `SAFE: ${(data.safe_operation_ids || []).length}`,
-    `REVIEW: ${(data.review_operation_ids || []).length}`,
-    `DENIED: ${(data.denied_operation_ids || []).length}`,
-    'No effect has been applied.'
-  ].join(' · ');
-}
-
-function summarizeApply(data) {
-  return `Verification: ${data.verification_state || 'UNKNOWN'}. Approved actions: ${(data.approved_operation_ids || []).length}.`;
-}
-
-function summarizeExplanation(data) {
-  return data.summary || data.explanation || JSON.stringify(data);
+  result.textContent = technicalReceipt(data);
 }
 
 function append(role, text) {

@@ -42,8 +42,15 @@ button, summary { font: inherit; }
 
 .shell {
   width: min(920px, calc(100% - 32px));
+  max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
   padding: 40px 0 72px;
+}
+
+.shell > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .hero {
@@ -106,6 +113,7 @@ h1 {
 
 .status-copy div {
   display: grid;
+  min-width: 0;
   gap: 3px;
 }
 
@@ -151,12 +159,14 @@ h1 {
 
 .signal-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  min-width: 0;
   gap: 8px;
   margin: 22px 0 28px;
 }
 
 .signal {
+  min-width: 0;
   min-height: 86px;
   padding: 14px 14px 12px;
   border: 1px solid var(--line);
@@ -185,6 +195,8 @@ h1 {
 .signal.effect strong { color: var(--accent); font-size: 1rem; letter-spacing: .04em; }
 
 .conversation {
+  min-width: 0;
+  max-width: 100%;
   border: 1px solid var(--line);
   border-radius: 20px;
   overflow: hidden;
@@ -193,11 +205,14 @@ h1 {
 }
 
 .transcript {
+  min-width: 0;
+  max-width: 100%;
   min-height: 178px;
   max-height: 420px;
   overflow: auto;
   padding: 22px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 12px;
 }
@@ -210,11 +225,14 @@ h1 {
 
 .message {
   width: fit-content;
-  max-width: 92%;
+  min-width: 0;
+  max-width: 100%;
   margin: 0;
   padding: 11px 14px;
   border-radius: 13px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .message.user {
@@ -231,7 +249,8 @@ h1 {
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
   gap: 8px;
   padding: 12px;
   border-top: 1px solid var(--line);
@@ -301,6 +320,8 @@ button:disabled {
 }
 
 .technical {
+  min-width: 0;
+  max-width: 100%;
   margin-top: 14px;
   border-top: 1px solid var(--line);
   color: var(--muted);
@@ -317,6 +338,8 @@ button:disabled {
 .technical summary::-webkit-details-marker { display: none; }
 
 pre {
+  min-width: 0;
+  max-width: 100%;
   margin: 0;
   padding: 14px;
   border: 1px solid var(--line);
@@ -324,6 +347,7 @@ pre {
   background: rgba(0,0,0,.24);
   overflow: auto;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   word-break: break-word;
   font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: rgba(244,245,247,.72);

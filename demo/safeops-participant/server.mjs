@@ -51,6 +51,7 @@ export function createDemoServer({
       if (req.method === 'GET' && url.pathname === '/') return serveAsset(res, 'index.html', 'text/html; charset=utf-8');
       if (req.method === 'GET' && url.pathname === '/app.js') return serveAsset(res, 'app.js', 'text/javascript; charset=utf-8');
       if (req.method === 'GET' && url.pathname === '/ui-state.js') return serveAsset(res, 'ui-state.js', 'text/javascript; charset=utf-8');
+      if (req.method === 'GET' && url.pathname === '/presentation.js') return serveAsset(res, 'presentation.js', 'text/javascript; charset=utf-8');
       if (req.method === 'GET' && url.pathname === '/styles.css') return serveAsset(res, 'styles.css', 'text/css; charset=utf-8');
       if (req.method === 'GET' && url.pathname === '/api/session') {
         return sendJson(res, 200, sessionView(session));
