@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SafeOps — Participant Demo</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Participant-built Alexa+ interaction substitute</p>
+      <h1>SafeOps</h1>
+      <p>Real MCP backend. Governed workspace maintenance. This is not an Amazon-hosted Alexa+ simulator.</p>
+    </header>
+
+    <section id="status" class="panel">Checking connection…</section>
+    <section id="transcript" class="transcript" aria-live="polite"></section>
+
+    <section class="controls">
+      <button id="connect">Connect user</button>
+      <button id="inspect" disabled>“Inspect this workspace and tell me what is safe to clean.”</button>
+      <button id="apply" disabled>“Apply only the safe actions.”</button>
+      <button id="explain" disabled>“What changed, and why didn’t you remove the other item?”</button>
+    </section>
+
+    <section id="result" class="panel" aria-live="polite"></section>
+  </main>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

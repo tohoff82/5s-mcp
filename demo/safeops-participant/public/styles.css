@@ -1,0 +1,15 @@
+:root { font-family: ui-sans-serif, system-ui, sans-serif; color-scheme: dark; }
+body { margin: 0; background: #111; color: #f5f5f5; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+header { margin-bottom: 24px; }
+h1 { font-size: 3rem; margin: .2rem 0; }
+.eyebrow { text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+.panel, .transcript { border: 1px solid #444; border-radius: 14px; padding: 16px; margin: 16px 0; background: #191919; }
+.transcript { min-height: 120px; }
+.controls { display: grid; gap: 10px; }
+button { text-align: left; padding: 14px 16px; border-radius: 12px; border: 1px solid #666; background: #222; color: inherit; cursor: pointer; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.message { padding: 10px 12px; border-radius: 10px; }
+.message.user { background: #252525; }
+.message.safeops { border-left: 3px solid #aaa; }
+pre { overflow: auto; white-space: pre-wrap; word-break: break-word; }
