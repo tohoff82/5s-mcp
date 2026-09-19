@@ -14,6 +14,7 @@ export class DemoSessionStore {
       oauth_attempt: null,
       tokens: null,
       mcp: null,
+      mcp_stale: false,
       current: null
     };
     this.sessions.set(id, session);
@@ -36,6 +37,8 @@ export class DemoSessionStore {
     if (session) {
       session.tokens = null;
       session.oauth_attempt = null;
+      session.mcp = null;
+      session.mcp_stale = false;
       session.current = null;
     }
     this.sessions.delete(id);

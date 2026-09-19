@@ -45,10 +45,12 @@ export function createDemoServer({
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', 'http://safeops.demo');
+    let session = null;
     try {
-      const session = resolveSession(req, res, sessionStore, config);
+      session = resolveSession(req, res, sessionStore, config);
       if (req.method === 'GET' && url.pathname === '/') return serveAsset(res, 'index.html', 'text/html; charset=utf-8');
       if (req.method === 'GET' && url.pathname === '/app.js') return serveAsset(res, 'app.js', 'text/javascript; charset=utf-8');
+      if (req.method === 'GET' && url.pathname === '/ui-state.js') return serveAsset(res, 'ui-state.js', 'text/javascript; charset=utf-8');
       if (req.method === 'GET' && url.pathname === '/styles.css') return serveAsset(res, 'styles.css', 'text/css; charset=utf-8');
       if (req.method === 'GET' && url.pathname === '/api/session') {
         return sendJson(res, 200, sessionView(session));
@@ -63,9 +65,16 @@ export function createDemoServer({
           state: url.searchParams.get('state'),
           redirectUri: config.redirectUri
         });
-        session.mcp = mcpFactory(session);
-        await session.mcp.connect();
+        await replaceMcp(session, mcpFactory);
         return redirect(res, '/?connected=1');
+      }
+      if (req.method === 'POST' && url.pathname === '/api/reconnect') {
+        requireAuthenticated(session);
+        await replaceMcp(session, mcpFactory);
+        return sendJson(res, 200, {
+          reconnected: true,
+          ...sessionView(session)
+        });
       }
       if (req.method === 'POST' && url.pathname === '/api/inspect') {
         requireMcp(session);
@@ -100,6 +109,13 @@ export function createDemoServer({
       return sendJson(res, 404, { error: 'not_found' });
     } catch (error) {
       console.error('[SafeOps Participant Demo]', error);
+      if (session && isInvalidMcpSession(error)) {
+        await markMcpStale(session);
+        return sendJson(res, 409, {
+          error: 'mcp_session_stale',
+          message: 'Backend session expired. Reconnect to continue.'
+        });
+      }
       return sendJson(res, 400, {
         error: 'demo_request_failed',
         message: error instanceof Error ? error.message : String(error)
@@ -118,6 +134,42 @@ export function createDemoServer({
   }
 }
 
+async function replaceMcp(session, mcpFactory) {
+  const previous = session.mcp;
+  session.mcp = null;
+  session.mcp_stale = false;
+  session.current = null;
+  if (previous && typeof previous.close === 'function') {
+    await previous.close().catch(() => {});
+  }
+
+  const candidate = mcpFactory(session);
+  try {
+    await candidate.connect();
+    session.mcp = candidate;
+  } catch (error) {
+    if (candidate && typeof candidate.close === 'function') {
+      await candidate.close().catch(() => {});
+    }
+    throw error;
+  }
+}
+
+async function markMcpStale(session) {
+  const previous = session.mcp;
+  session.mcp = null;
+  session.mcp_stale = true;
+  session.current = null;
+  if (previous && typeof previous.close === 'function') {
+    await previous.close().catch(() => {});
+  }
+}
+
+function isInvalidMcpSession(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes('invalid_session');
+}
+
 function resolveSession(req, res, store, config) {
   const sid = parseCookies(req.headers.cookie || '').safeops_demo_sid;
   const session = store.getOrCreate(sid);
@@ -131,12 +183,20 @@ function sessionView(session) {
     amazon_hosted_alexa: false,
     authenticated: Boolean(session.tokens?.access_token),
     mcp_connected: Boolean(session.mcp),
+    mcp_stale: Boolean(session.mcp_stale),
     current: session.current
   };
 }
 
+function requireAuthenticated(session) {
+  if (!session.tokens?.access_token) throw new Error('Connect user OAuth before reconnecting SafeOps');
+}
+
 function requireMcp(session) {
-  if (!session.mcp) throw new Error('Connect user OAuth before using SafeOps');
+  if (!session.mcp) {
+    if (session.mcp_stale) throw new Error('Backend session expired. Reconnect to continue.');
+    throw new Error('Connect user OAuth before using SafeOps');
+  }
 }
 
 async function readJson(req) {

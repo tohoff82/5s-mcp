@@ -7,25 +7,80 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main>
-    <header>
-      <p class="eyebrow">Participant-built Alexa+ interaction substitute</p>
+  <main class="shell">
+    <header class="hero">
+      <div class="eyebrow-row">
+        <span class="eyebrow">Participant-built Alexa+ interaction substitute</span>
+        <span class="surface-note">Real MCP backend</span>
+      </div>
       <h1>SafeOps</h1>
-      <p>Real MCP backend. Governed workspace maintenance. This is not an Amazon-hosted Alexa+ simulator.</p>
+      <p class="lede">Governed workspace maintenance through a participant-built interaction surface. Not an Amazon-hosted Alexa+ simulator.</p>
     </header>
 
-    <section id="status" class="panel">Checking connection…</section>
-    <section id="transcript" class="transcript" aria-live="polite"></section>
-
-    <section class="controls">
-      <button id="connect">Connect user</button>
-      <button id="inspect" disabled>“Inspect this workspace and tell me what is safe to clean.”</button>
-      <button id="apply" disabled>“Apply only the safe actions.”</button>
-      <button id="explain" disabled>“What changed, and why didn’t you remove the other item?”</button>
+    <section class="status-strip" aria-live="polite">
+      <div class="status-copy">
+        <span id="status-dot" class="status-dot"></span>
+        <div>
+          <strong id="status-title">Checking connection</strong>
+          <span id="status-detail">Reading participant session…</span>
+        </div>
+      </div>
+      <div class="session-actions">
+        <button id="reconnect" class="ghost compact" disabled>Reconnect backend</button>
+        <button id="logout" class="ghost compact" disabled>Log out of demo</button>
+      </div>
     </section>
 
-    <section id="result" class="panel" aria-live="polite"></section>
+    <section class="signal-grid" aria-label="SafeOps classification">
+      <div class="signal safe">
+        <span>SAFE</span>
+        <strong id="safe-count">—</strong>
+      </div>
+      <div class="signal review">
+        <span>REVIEW</span>
+        <strong id="review-count">—</strong>
+      </div>
+      <div class="signal denied">
+        <span>DENIED</span>
+        <strong id="denied-count">—</strong>
+      </div>
+      <div class="signal effect">
+        <span>EFFECT</span>
+        <strong id="effect-state">NONE</strong>
+      </div>
+    </section>
+
+    <section class="conversation">
+      <div id="transcript" class="transcript" aria-live="polite">
+        <p class="empty-state">Connect a user, inspect the workspace, then apply only the bounded SAFE subset.</p>
+      </div>
+
+      <div class="controls">
+        <button id="connect" class="primary">Connect user</button>
+
+        <button id="inspect" class="command" disabled>
+          <span>Inspect workspace</span>
+          <small>“Tell me what is safe to clean.”</small>
+        </button>
+
+        <button id="apply" class="command" disabled>
+          <span>Apply safe only</span>
+          <small>“Apply only the safe actions.”</small>
+        </button>
+
+        <button id="explain" class="command" disabled>
+          <span>Explain decision</span>
+          <small>“What changed, and why were the other items left alone?”</small>
+        </button>
+      </div>
+    </section>
+
+    <details id="technical" class="technical">
+      <summary>Technical receipt</summary>
+      <pre id="result">No backend result yet.</pre>
+    </details>
   </main>
+
   <script type="module" src="/app.js"></script>
 </body>
 </html>
