@@ -46,14 +46,16 @@ Defaults include `config/safety-policy.json`, `/tmp/5s-plans`, `/backup/5s`, `/t
 A normal finite read-only tool can use the existing registry/factory pattern. A new destructive action, persistent process, credential form, remote transport, policy relaxation, state format, package entrypoint, or trust boundary requires architecture and security review before documentation claims are updated.
 
 
-## SafeOps C0 construction candidate
+## SafeOps hackathon increment
 
-The Alexa+ hackathon increment is physically separate from the inherited stdio registry. `src/safeops/server.js` exposes exactly three workflow tools and never imports the legacy 12-tool registry. `src/safeops/http.js` provides a stateless Streamable HTTP carrier; validated HTTP auth becomes SDK `AuthInfo`, then service and optional actor context. `TargetRegistry` binds the actor to an operator-configured workspace before planning.
+The Alexa+ hackathon increment is physically separate from the inherited stdio registry. `src/safeops/server.js` exposes exactly three workflow tools and never imports the legacy 12-tool registry. `src/safeops/http.js` provides the Streamable HTTP carrier; validated HTTP auth becomes SDK `AuthInfo`, then service and optional actor context. `TargetRegistry` binds the actor to an operator-configured workspace before planning.
 
 ```mermaid
 flowchart LR
-  A["Alexa+/MCP client"] -->|"Bearer + Streamable HTTP"| H["SafeOps HTTP boundary"]
-  H --> I["service/user context"]
+  U["Participant-built conversation surface"] --> D["B3 demo service"]
+  D --> O["B2 user OAuth + PKCE"]
+  D -->|Bearer + Streamable HTTP| H["SafeOps C0 /mcp"]
+  H --> I["service / user context"]
   I --> T["TargetRegistry"]
   T --> W["workflow + evidence store"]
   W --> P["inspect / classify / bounded approval"]
@@ -63,6 +65,10 @@ flowchart LR
   V --> X["evidence-backed explanation"]
 ```
 
-The inherited engine now supports optional bounded target profiles and exact operation subsets. With no target profile or operation subset, legacy behavior remains available to the inherited stdio surface. SafeOps always supplies both boundaries for effectful use. `ExecutableSet <= Approved SAFE Set`; REVIEW and DENIED actions cannot enter ordinary SafeOps approval.
+The participant surface is a carrier, not an authority root. The backend owns classification, approval receipt, executable-set enforcement, effect evidence, verification, and explanation.
 
-The current branch proves only local Phase A construction. External authorization-server conformance, Alexa account linking, real elicitation, remote deployment, and independent validation remain later gates.
+The inherited engine supports optional bounded target profiles and exact operation subsets. With no target profile or operation subset, legacy behavior remains available to the inherited stdio surface. SafeOps always supplies both boundaries for effectful use. `ExecutableSet <= Approved SAFE Set`; REVIEW and DENIED actions cannot enter ordinary SafeOps approval.
+
+For the controlled hackathon target, [`scripts/safeops-c0-start.mjs`](../scripts/safeops-c0-start.mjs) validates the exact target/policy contract and materializes the deterministic SAFE / REVIEW / DENIED fixture before starting the backend.
+
+The live hackathon proof exercised user OAuth, MCP initialize/list, inspect, bounded SAFE-only apply, post-effect verification, and explanation. That proof is intentionally narrower than production readiness: it does not claim Amazon-hosted Alexa+ UI access, unrestricted authority, customer production deployment, or mainline adoption.

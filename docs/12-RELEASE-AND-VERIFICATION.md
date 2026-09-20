@@ -46,17 +46,23 @@ Documentation closure requires:
 For a documentation-only change, prove the runtime source diff is empty. If runtime was changed to reconcile a documented safety boundary, identify the exact invariant, tests, and source diff as a mixed documentation/runtime change.
 
 
-## SafeOps Phase A candidate gates
+## SafeOps hackathon verification gates
 
-The SafeOps construction branch adds local checks without changing the inherited 12-tool documentation membrane:
+The SafeOps hackathon branch adds repository and controlled-fixture checks without changing the inherited 12-tool documentation membrane:
 
 ```sh
 npm run safeops:test
+node --test demo/safeops-participant/test/*.test.mjs
 node scripts/safeops-fixture.mjs create
 node scripts/safeops-fixture.mjs verify
 node scripts/safeops-fixture.mjs reset
+node --check scripts/safeops-c0-start.mjs
 ```
 
-Local SafeOps PASS demonstrates only repository construction and controlled-fixture behavior. It does not prove real Alexa transport negotiation beyond the local SDK carrier test, external authorization-server conformance, account linking, customer elicitation/approval, public deployment, independent validation, `SAFEOPS_C0` acceptance, or production readiness. Those are separate governed phases.
+Repository PASS demonstrates source-level contracts: exact three-tool projection, target binding, approval scoping, policy/classification behavior, verification, OAuth/client carrier contracts, and the thin participant-surface boundary.
 
-The SafeOps HTTP/auth code introduces no new direct dependency in Phase A; `package-lock.json` should remain unchanged. A dependency or lockfile delta requires separate review under the accepted construction boundary.
+The controlled live-demo receipts add a different class of evidence: user OAuth authorization-code + PKCE, authenticated MCP initialize/list, inspect, bounded SAFE-only apply, a real controlled effect, post-effect verification, and explanation of the same effectful workflow.
+
+Neither class of evidence should be inflated into a production-readiness claim. They do not prove Amazon-hosted Alexa+ UI access, unrestricted agent authority, customer production deployment, production identity-provider readiness, or mainline adoption.
+
+The hackathon OAuth lab keeps its dependency boundary under `lab/oauth/`. Any dependency or lockfile delta remains subject to the normal repository audit and verification gates; documentation does not waive those checks.

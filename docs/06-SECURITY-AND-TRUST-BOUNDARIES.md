@@ -42,7 +42,7 @@ Read-only annotations are hints, not authorization. Local cleanup apply, policy 
 Stop on a deny verdict, missing evidence, failed required backup, unsupported platform gate, unknown target, or verification regression. Correct scope/configuration or escalate; do not weaken a failed safety boundary as remediation. Report vulnerabilities through root [`SECURITY.md`](../SECURITY.md).
 
 
-## SafeOps trust membrane (C0 construction candidate)
+## SafeOps hackathon trust boundary
 
 SafeOps adds boundaries that the inherited local stdio server intentionally does not provide:
 
@@ -55,5 +55,6 @@ SafeOps adds boundaries that the inherited local stdio server intentionally does
 - Approval is single-attempt: consumption is represented by an immutable consumption marker before effect execution.
 - Workflow evidence is append-oriented; historical approval evidence is not equivalent to current authority.
 - SafeOps verification independently compares approved scope and reported execution scope before claiming verified success.
+- The participant demo carrier fails closed unless the backend exposes exactly the expected three SafeOps tools and does not provide a generic raw tool-call route.
 
-The committed local test approval provider and fixture-specific policy are laboratory-only. They are not real Alexa customer approval, OAuth-provider conformance, production credentials, or production promotion evidence.
+The controlled hackathon path exercised user OAuth, authenticated MCP transport, inspect, bounded approval, one real SAFE effect, verification, and explanation. Those receipts demonstrate the governed demo path only. They do not turn the lab authorization server into a production identity provider, do not make the participant UI an Amazon-hosted Alexa+ surface, and do not establish production/customer readiness or mainline adoption.

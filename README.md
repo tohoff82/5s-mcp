@@ -13,7 +13,13 @@ audience: [user, operator]
 
 Current source-backed surface: 12 tools in 1 ordered registry, 1 stdio entrypoint, Node.js >=18, 6 read-only tools, 2 mixed non-destructive tools, and 4 destructive-capable tools. Package and MCP handshake both use version `1.0.1`.
 
-The Amazon Alexa+ SafeOps C0 construction branch adds a **separate** candidate surface without changing that legacy registry: 3 workflow tools over authenticated Streamable HTTP (`safeops_inspect_workspace`, `safeops_apply_safe_actions`, `safeops_explain_workflow`), explicit actor-to-target binding, exact SAFE-operation approval scope, append-oriented workflow evidence, and post-effect verification. This is a local Phase A implementation candidate only; real Alexa+, OAuth-provider, elicitation, deployment, and baseline acceptance remain outside the current repository-construction claim.
+The Amazon Alexa+ hackathon branch adds a **separate** SafeOps surface without changing that legacy registry: 3 workflow tools over authenticated Streamable HTTP (`safeops_inspect_workspace`, `safeops_apply_safe_actions`, `safeops_explain_workflow`), explicit actor-to-target binding, bounded SAFE-only approval, append-oriented workflow evidence, real controlled effects, post-effect verification, and evidence-backed explanation. The hackathon demo uses a participant-built interaction surface because the Alexa+ participant Toolkit / hosted simulator was not available in our participant path; only that interaction carrier is substituted. Authentication, MCP transport, SafeOps classification, policy enforcement, controlled execution, verification, and explanation are live behind it. This is hackathon/demo evidence, not a claim of Amazon-hosted UI, production promotion, or mainline adoption.
+
+Judge-facing hackathon material:
+- [Submission overview](docs/hackathon/SUBMISSION.md)
+- [Testing and verification](docs/hackathon/TESTING.md)
+- [Product feedback](docs/hackathon/PRODUCT-FEEDBACK.md)
+- [Friction log](docs/hackathon/FRICTION-LOG.md)
 
 ## Install and connect
 

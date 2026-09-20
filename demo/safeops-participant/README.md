@@ -1,8 +1,8 @@
 # SafeOps Participant Demo Surface
 
-Status: **B3-R1 / I0 local implementation candidate**
+Status: **B3-R1 live hackathon demo / judge-facing branch**
 
-This directory contains a thin participant-built interaction carrier for the Amazon Alexa+ hackathon.
+This directory contains the thin participant-built interaction carrier used for the Amazon Alexa+ hackathon demonstration.
 
 It is **not** an Amazon-hosted Alexa+ simulator, Alexa Add-on, or replacement SafeOps implementation.
 
@@ -13,22 +13,11 @@ Browser demo UI
   -> participant demo service
   -> user OAuth authorization-code + PKCE
   -> real Streamable HTTP MCP client
-  -> existing SafeOps C0 /mcp
-  -> existing SafeOps workflow / 5S gates / target
+  -> SafeOps C0 /mcp
+  -> SafeOps workflow / 5S gates / controlled target
 ```
 
-The remote SafeOps backend remains authoritative for:
-
-- actor and target binding;
-- workflow and plan identity;
-- SAFE / REVIEW / DENIED classification;
-- approval receipt;
-- 5S staging and apply-time policy checks;
-- effect evidence;
-- verification;
-- explanation.
-
-The participant carrier does not implement those semantics again.
+The participant surface stands in only for the unavailable Alexa+-side interaction carrier. The backend remains authoritative for actor and target binding, workflow and plan identity, SAFE / REVIEW / DENIED classification, approval receipt, 5S staging and apply-time policy checks, controlled effect evidence, verification, and explanation.
 
 ## Exact MCP projection
 
@@ -42,30 +31,19 @@ There is no generic raw `tools/call` HTTP route in the demo service.
 
 ## Approval carrier
 
-The UI action **Apply only the safe actions** creates a short-lived, single-use approval event bound to:
+The UI action **Apply only the safe actions** creates a short-lived, single-use approval event bound to the current demo session, `workflow_id`, and `plan_id`. That event only allows the MCP client to answer the backend's native form elicitation.
 
-- current demo session;
-- current `workflow_id`;
-- current `plan_id`.
-
-That event only allows the MCP client to answer the backend's native form elicitation.
-
-The backend still owns the actual approval receipt and executable-set enforcement.
-
-The UI does not submit `operation_ids` to broaden or redefine the SAFE set.
+The backend still owns the actual approval receipt and executable-set enforcement. The UI does not submit `operation_ids` to broaden or redefine the SAFE set.
 
 ## OAuth
 
-The carrier uses the existing user-auth contract:
+The carrier uses authorization code + PKCE S256, exact `resource` binding, a server-side client secret, refresh-token handling, and Bearer tokens only in the Authorization header. No user token is placed in a query string.
 
-- authorization code;
-- PKCE S256;
-- exact `resource` binding;
-- server-side client secret;
-- refresh token handling;
-- Bearer token only in the Authorization header.
+## Controlled demo target
 
-No user token is placed in a query string.
+The live C0 startup wrapper is committed at [`scripts/safeops-c0-start.mjs`](../../scripts/safeops-c0-start.mjs). It validates the expected target/policy contract and materializes a deterministic controlled fixture with one SAFE candidate, one REVIEW candidate, and one DENIED candidate before starting the SafeOps backend.
+
+The demonstrated effect is intentionally narrow: only the approved SAFE action is eligible to execute. REVIEW remains outside the approved execution scope and DENIED remains blocked by policy.
 
 ## Local configuration
 
@@ -91,60 +69,46 @@ PORT=4173
 DEMO_COOKIE_SECURE=false
 ```
 
-For a future HTTPS deployment, `DEMO_COOKIE_SECURE` must be enabled.
+For HTTPS deployment, `DEMO_COOKIE_SECURE` must be enabled.
 
-## Local test
+## Verification
 
 From the repository root:
 
 ```sh
+npm ci
+npm run check
+npm test
+npm run docs:links
+npm run docs:verify
 node --test demo/safeops-participant/test/*.test.mjs
+node --check scripts/safeops-c0-start.mjs
 ```
 
-I0 tests cover:
+See [hackathon testing evidence](../../docs/hackathon/TESTING.md) for the distinction between repository tests and the controlled live proof.
 
-- explicit/single-use approval;
-- stale and cross-session/plan rejection;
-- PKCE/resource binding;
-- token refresh;
-- exact three-tool projection;
-- no UI-supplied operation set;
-- target binding at the demo service;
-- absence of a generic tool-call route;
-- thin-carrier static boundary.
+## Current live proof
 
-## I0 hold
+The controlled hackathon path exercised real user OAuth, MCP initialize / tools-list, inspect, bounded SAFE-only approval, effect, verification, and explanation against the live backend.
 
-B3-R1 / I0 does **not** authorize:
+```text
+Inspect
+  -> plan: SAFE 1 / REVIEW 1 / DENIED 1 / EFFECT NONE
+  -> Apply only the safe actions
+  -> VERIFIED_SUCCESS for the SAFE effect
+  -> Explain the same governed workflow
+```
 
-- Railway mutation;
-- OAuth redirect-URI mutation;
-- C0 or B2 deployment mutation;
-- fixture effect;
-- production/customer effect;
-- AWS credentials or STS;
-- CodeArtifact;
-- `@alexa-ai/cli`;
-- Alexa registration or deploy;
-- main merge;
-- Phase C.
+The plan snapshot is not a claim that the filesystem remains unchanged after Apply. Verification and explanation refer to the effectful workflow state.
 
-## Devpost narrative delta
+## Non-goals and boundaries
 
-SafeOps exposes a real self-hosted MCP 2025-11-25+ Streamable HTTP backend.
+This hackathon evidence does **not** claim Amazon-hosted Alexa+ simulator/toolkit usage, production/customer readiness, unrestricted filesystem authority, execution of REVIEW or DENIED actions through ordinary approval, production promotion, or main merge.
 
-Hackathon participants do not receive the Amazon MCP Toolkit or Amazon-hosted simulator. The demo therefore uses a participant-built Alexa+-style interaction surface connected to the real SafeOps MCP backend.
+## Judge-facing disclosure
 
-Only the unavailable Alexa-side interaction carrier is substituted. SafeOps workflow state, MCP transport, authentication/authorization boundaries, target binding, effect and verification remain backend-owned and real when the later controlled live/effect gates are opened.
+**Participant-built interaction surface. Live governed backend.**
 
-## Friction Log candidate
+The participant UI represents the Alexa+ conversation/orchestration side for this hackathon demonstration. Authentication, MCP transport, SafeOps policy enforcement, controlled effect, verification, and explanation behind it are live.
 
-**Task:** Follow the documented Alexa+ MCP onboarding path.
-
-**Expected:** Participant-accessible Toolkit / CLI / hosted simulator path.
-
-**Actual:** The public Alexa+ material describes Toolkit workflows, while participant entitlement does not provide that surface. Direct organizer clarification established that participants may use a self-built simulator or front end.
-
-**Project response:** Preserve the real self-hosted MCP implementation and substitute only the unavailable Alexa-side interaction carrier.
-
-**Current I0 state:** local carrier implementation only; no external runtime mutation and no effect.
+See the [submission overview](../../docs/hackathon/SUBMISSION.md), [product feedback](../../docs/hackathon/PRODUCT-FEEDBACK.md), and [friction log](../../docs/hackathon/FRICTION-LOG.md).
