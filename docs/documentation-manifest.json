@@ -5,6 +5,7 @@
     { "path": "README.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "onboarding" },
     { "path": "SECURITY.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "vulnerability-reporting" },
     { "path": "CONTRIBUTING.md", "authority": "supporting", "status": "current", "metadata": true, "subject": "contribution" },
+    { "path": "demo/safeops-participant/README.md", "authority": "supporting", "status": "current", "metadata": false, "subject": "hackathon-participant-demo-surface" },
     { "path": "TODO-LEAN-EXTENSIONS.md", "authority": "historical", "status": "deprecated", "metadata": true, "subject": "completed-implementation-plan" },
 
     { "path": "docs/00-DOCUMENTATION-MAP.md", "authority": "canonical", "status": "current", "metadata": true, "subject": "documentation-map" },
