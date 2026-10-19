@@ -77,13 +77,20 @@ export function createDemoServer({
           ...sessionView(session)
         });
       }
+      if (req.method === 'POST' && url.pathname === '/api/prepare') {
+        requireMcp(session);
+        const prepared = await session.mcp.prepare();
+        return sendJson(res, 200, prepared);
+      }
       if (req.method === 'POST' && url.pathname === '/api/inspect') {
         requireMcp(session);
+        requireDemoPrepared(session);
         const result = await session.mcp.inspect({ targetId: config.targetId });
         return sendJson(res, 200, result);
       }
       if (req.method === 'POST' && url.pathname === '/api/approval') {
         requireMcp(session);
+        requireDemoPrepared(session);
         const approval = session.mcp.issueApproval();
         return sendJson(res, 200, {
           approval_nonce: approval.nonce,
@@ -94,15 +101,18 @@ export function createDemoServer({
       }
       if (req.method === 'POST' && url.pathname === '/api/apply') {
         requireMcp(session);
+        requireDemoPrepared(session);
         const body = await readJson(req);
         const result = await session.mcp.apply({ approvalNonce: requireString(body.approval_nonce, 'approval_nonce') });
         return sendJson(res, 200, result);
       }
       if (req.method === 'POST' && url.pathname === '/api/explain') {
         requireMcp(session);
+        requireDemoPrepared(session);
         return sendJson(res, 200, await session.mcp.explain());
       }
       if (req.method === 'POST' && url.pathname === '/api/logout') {
+        if (session.mcp && session.replayLease) await session.mcp.release().catch(() => {});
         await sessionStore.destroy(session.id);
         clearSessionCookie(res, config);
         return sendJson(res, 200, { logged_out: true });
@@ -117,8 +127,8 @@ export function createDemoServer({
           message: 'Backend session expired. Reconnect to continue.'
         });
       }
-      return sendJson(res, 400, {
-        error: 'demo_request_failed',
+      return sendJson(res, Number.isInteger(error.status) ? error.status : 400, {
+        error: error.code || 'demo_request_failed',
         message: error instanceof Error ? error.message : String(error)
       });
     }
@@ -185,12 +195,17 @@ function sessionView(session) {
     authenticated: Boolean(session.tokens?.access_token),
     mcp_connected: Boolean(session.mcp),
     mcp_stale: Boolean(session.mcp_stale),
+    demo_prepared: Boolean(session.replayLease),
     current: session.current
   };
 }
 
 function requireAuthenticated(session) {
   if (!session.tokens?.access_token) throw new Error('Connect user OAuth before reconnecting SafeOps');
+}
+
+function requireDemoPrepared(session) {
+  if (!session.replayLease) throw new Error('Start guided demo to prepare the controlled workspace');
 }
 
 function requireMcp(session) {

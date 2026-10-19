@@ -29,7 +29,7 @@ The Amazon Alexa+ hackathon branch adds a **separate** SafeOps surface without c
 4. Check the verification result, then select **Explain decision** to see what changed and what remained untouched.
 5. Expand **Technical receipt** for additional protocol and workflow evidence.
 
-**Repeatability limitation:** The live demo operates on a shared controlled fixture. A SAFE apply changes that fixture; a fresh browser session alone does not restore it. A subsequent evaluator may see different candidate counts until the controlled fixture is safely rematerialized. Do not assume independent judge runs or automatic reset have been verified.
+**Live deployment limitation:** The currently hosted B3-R1 / C0 demo uses a shared fixture. A SAFE apply changes that fixture; starting a new browser session does not reset it. The **B3-R2 guided replay implementation is an un-deployed candidate**, not a claim that the live service already supports the Start / Run again path. See [B3-R2 replay contract and local test scope](demo/safeops-participant/DEMO-REPLAY-B3-R2.md).
 
 **Representation:** The UI is a participant-built Alexa+ interaction substitute, **not** an Amazon-hosted Alexa+ simulator or native Alexa+ runtime. The authenticated MCP backend, bounded policy/effect, verification, and explanation are separately implemented and evidenced.
 

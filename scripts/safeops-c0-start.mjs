@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { createFixture, verifyFixture } from './safeops-fixture.mjs';
 import { startSafeOpsLab } from '../src/safeops/bootstrap.js';
+import { DemoReplayController } from '../src/safeops/demo/replay-controller.js';
 
 const FIXTURE_ROOT = '/home/safeops-c0-fixture';
 const CANDIDATES = [
@@ -123,7 +124,7 @@ async function main() {
     files: fixture.files
   }));
 
-  const runtime = await startSafeOpsLab();
+  const runtime = await startSafeOpsLab({ demoReplay: new DemoReplayController() });
   const address = runtime.address;
   console.error(
     '[SafeOps] listening on ' +

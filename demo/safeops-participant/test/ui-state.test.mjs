@@ -40,10 +40,11 @@ test('stale MCP state preserves authenticated identity and enables reconnect wit
   assert.equal(controls.status, 'stale');
 });
 
-test('connected state enables inspect while apply/explain remain workflow-bound', () => {
+test('connected and prepared state enables inspect while apply/explain remain workflow-bound', () => {
   const controls = deriveControls({
     authenticated: true,
     connected: true,
+    prepared: true,
     stale: false,
     busy: false,
     canApply: false,

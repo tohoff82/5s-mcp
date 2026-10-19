@@ -15,6 +15,7 @@ export class DemoSessionStore {
       tokens: null,
       mcp: null,
       mcp_stale: false,
+      replayLease: null,
       current: null
     };
     this.sessions.set(id, session);
@@ -39,6 +40,7 @@ export class DemoSessionStore {
       session.oauth_attempt = null;
       session.mcp = null;
       session.mcp_stale = false;
+      session.replayLease = null;
       session.current = null;
     }
     this.sessions.delete(id);

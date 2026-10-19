@@ -11,6 +11,7 @@ const connect = document.querySelector('#connect');
 const reconnect = document.querySelector('#reconnect');
 const logout = document.querySelector('#logout');
 const inspect = document.querySelector('#inspect');
+const startDemo = document.querySelector('#start-demo');
 const apply = document.querySelector('#apply');
 const explain = document.querySelector('#explain');
 const safeCount = document.querySelector('#safe-count');
@@ -21,6 +22,8 @@ const effectState = document.querySelector('#effect-state');
 const ui = {
   authenticated: false,
   connected: false,
+  prepared: false,
+  demoStarted: false,
   stale: false,
   busy: false,
   canApply: false,
@@ -57,6 +60,28 @@ logout.addEventListener('click', async () => {
     await api('/api/logout');
     resetSessionUi();
     append('safeops', 'Demo session cleared. You can connect again in this browser.');
+  } catch (error) {
+    handleRequestError(error);
+  } finally {
+    setBusy(false);
+  }
+});
+
+startDemo.addEventListener('click', async () => {
+  setBusy(true);
+  try {
+    const response = await api('/api/prepare');
+    if (!response.fixture_ready) throw new Error('Demo workspace was not verified');
+    ui.prepared = true;
+    ui.demoStarted = true;
+    resetWorkflowUi();
+    append('safeops', 'Fresh controlled sample prepared and verified. Starting inspection.');
+    const data = await api('/api/inspect');
+    showResult(data);
+    append('safeops', summarizePlan(data));
+    updateSignals(data);
+    ui.canApply = (data.safe_operation_ids || []).length > 0;
+    ui.canExplain = true;
   } catch (error) {
     handleRequestError(error);
   } finally {
@@ -125,6 +150,7 @@ async function api(endpoint, body = undefined) {
 function handleRequestError(error) {
   if (error?.code === 'mcp_session_stale') {
     ui.connected = false;
+    ui.prepared = false;
     ui.stale = true;
     ui.canApply = false;
     ui.canExplain = false;
@@ -139,14 +165,17 @@ function handleRequestError(error) {
 function applySession(session) {
   ui.authenticated = Boolean(session.authenticated);
   ui.connected = Boolean(session.mcp_connected);
+  ui.prepared = Boolean(session.demo_prepared);
   ui.stale = Boolean(session.mcp_stale);
   ui.canExplain = Boolean(session.current) && ui.connected;
-  if (!ui.connected) ui.canApply = false;
+  if (!ui.connected || !ui.prepared) ui.canApply = false;
 }
 
 function resetSessionUi() {
   ui.authenticated = false;
   ui.connected = false;
+  ui.prepared = false;
+  ui.demoStarted = false;
   ui.stale = false;
   ui.canApply = false;
   ui.canExplain = false;
@@ -203,6 +232,8 @@ function render() {
   connect.disabled = controls.connectDisabled;
   reconnect.disabled = controls.reconnectDisabled;
   logout.disabled = controls.logoutDisabled;
+  startDemo.disabled = controls.startDemoDisabled;
+  startDemo.querySelector('span').textContent = ui.demoStarted ? 'Run again with fresh sample' : 'Start guided demo';
   inspect.disabled = controls.inspectDisabled;
   apply.disabled = controls.applyDisabled;
   explain.disabled = controls.explainDisabled;

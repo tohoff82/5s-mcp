@@ -218,6 +218,7 @@ test('stale inspect marks transport stale and never retries the tool call', asyn
     const cookie = await createCookie(base);
     await connect(base, cookie);
 
+    store.get(sidFromCookie(cookie)).replayLease = 'prepared-test-lease';
     const response = await fetch(`${base}/api/inspect`, { method: 'POST', headers: { cookie } });
     assert.equal(response.status, 409);
     const payload = await response.json();
@@ -256,6 +257,7 @@ test('stale apply never retries the effectful tool call', async () => {
     await connect(base, cookie);
     store.get(sid).current = { workflow_id: 'wf-1', plan_id: 'plan-1', target_id: 'demo' };
 
+    store.get(sid).replayLease = 'prepared-test-lease';
     const approval = await (await fetch(`${base}/api/approval`, { method: 'POST', headers: { cookie } })).json();
     const response = await fetch(`${base}/api/apply`, {
       method: 'POST',

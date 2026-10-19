@@ -55,3 +55,9 @@ The live C0 startup wrapper at [`scripts/safeops-c0-start.mjs`](../../scripts/sa
 These checks do not establish production identity-provider readiness, Amazon-hosted Alexa+ UI access, customer production deployment, unrestricted host safety, automatic rollback for arbitrary effects, or mainline adoption.
 
 The proof target is narrower: the controlled governed workflow works end to end, and the evidence surface distinguishes plan, authority, effect, verification, and explanation.
+
+## B3-R2 Guided Demo Replay candidate (not deployed)
+
+The isolated B3-R2 branch implements authenticated demo preparation with a single active lease and an exact allowlisted fixture rematerialization; the SafeOps MCP tool list remains unchanged. Automated checks cover stale/mismatched leases, overlapping runs, tampered fixture marker, foreign files, symlinks, and Streamable HTTP lease propagation. See [Demo Replay B3-R2](../../demo/safeops-participant/DEMO-REPLAY-B3-R2.md).
+
+**Local tests are not live deployment evidence.** Independent full judge browser repetitions with real OAuth and real SAFE effects remain a separate pre-deployment/deployment acceptance gate.

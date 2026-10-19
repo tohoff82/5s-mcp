@@ -112,3 +112,7 @@ This hackathon evidence does **not** claim Amazon-hosted Alexa+ simulator/toolki
 The participant UI represents the Alexa+ conversation/orchestration side for this hackathon demonstration. Authentication, MCP transport, SafeOps policy enforcement, controlled effect, verification, and explanation behind it are live.
 
 See the [submission overview](../../docs/hackathon/SUBMISSION.md), [product feedback](../../docs/hackathon/PRODUCT-FEEDBACK.md), and [friction log](../../docs/hackathon/FRICTION-LOG.md).
+
+## Guided Demo Replay B3-R2 (candidate / not live)
+
+The separate B3-R2 branch proposes authenticated fixture preparation and replay through an exclusive backend lease. This feature is **not deployed** as part of the currently hosted B3-R1 demo. [Implementation and safety contract](DEMO-REPLAY-B3-R2.md).

@@ -23,6 +23,7 @@ test('HTTP surface binds the target server-side and exposes no generic tool-call
   };
   const mcpFactory = session => ({
     async connect() {},
+    async prepare() { session.replayLease = 'test-lease'; return { fixture_ready: true }; },
     async inspect({ targetId }) {
       inspectedTarget = targetId;
       session.current = { workflow_id: 'wf-1', plan_id: 'plan-1', target_id: targetId };
@@ -51,6 +52,8 @@ test('HTTP surface binds the target server-side and exposes no generic tool-call
     redirect: 'manual'
   });
   assert.equal(callback.status, 302);
+
+  assert.equal((await fetch(`${base}/api/prepare`, { method: 'POST', headers: { cookie } })).status, 200);
 
   const inspected = await fetch(`${base}/api/inspect`, {
     method: 'POST',

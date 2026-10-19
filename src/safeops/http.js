@@ -1,10 +1,11 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { DEMO_REPLAY_PATH } from './demo/replay-controller.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SafeOpsMcpServer } from './server.js';
 import { authenticateRequest, runtimeContextFromAuthInfo } from './auth/middleware.js';
 
-export function createSafeOpsHttpServer({ dependencies, tokenValidator, resourceMetadata, mcpPath = '/mcp', metadataPath = '/.well-known/oauth-protected-resource', requiredUserScope } = {}) {
+export function createSafeOpsHttpServer({ dependencies, tokenValidator, resourceMetadata, mcpPath = '/mcp', metadataPath = '/.well-known/oauth-protected-resource', requiredUserScope, demoReplay = null } = {}) {
   if (!dependencies) throw new Error('SafeOps dependencies are required');
   if (!tokenValidator) throw new Error('TokenValidator is required');
   if (!resourceMetadata) throw new Error('Protected resource metadata is required');
@@ -13,6 +14,25 @@ export function createSafeOpsHttpServer({ dependencies, tokenValidator, resource
   const server = http.createServer(async (req, res) => {
     const pathname = new URL(req.url || '/', 'http://safeops.local').pathname;
     if (req.method === 'GET' && pathname === metadataPath) return sendJson(res, 200, resourceMetadata);
+    if (demoReplay && (pathname === DEMO_REPLAY_PATH + '/prepare' || pathname === DEMO_REPLAY_PATH + '/release')) {
+      if (req.method !== 'POST') return sendJson(res, 405, { error: 'method_not_allowed' });
+      try {
+        const authInfo = await authenticateRequest(req, tokenValidator);
+        const input = await readDemoBody(req);
+        if (pathname.endsWith('/prepare')) {
+          const result = await demoReplay.prepare({ authInfo, targetRegistry: dependencies.targetRegistry, sessionId: input.session_id });
+          return sendJson(res, 200, result);
+        }
+        const result = demoReplay.release({
+          authInfo, targetRegistry: dependencies.targetRegistry,
+          sessionId: input.session_id, token: input.lease_token
+        });
+        return sendJson(res, 200, result);
+      } catch (error) {
+        const status = Number.isInteger(error.status) ? error.status : Number.isInteger(error.statusCode) ? error.statusCode : 400;
+        return sendJson(res, status, { error: error.code || 'demo_prepare_failed', message: error.message });
+      }
+    }
     if (pathname !== mcpPath) return sendJson(res, 404, { error: 'Not found' });
     if (!['POST', 'GET', 'DELETE'].includes(req.method || '')) {
       res.setHeader('Allow', 'POST, GET, DELETE');
@@ -20,7 +40,12 @@ export function createSafeOpsHttpServer({ dependencies, tokenValidator, resource
     }
 
     try {
-      await authenticateRequest(req, tokenValidator);
+      const authInfo = await authenticateRequest(req, tokenValidator);
+      const leaseHeader = headerValue(req.headers['x-safeops-demo-lease']);
+      req.auth = {
+        ...authInfo,
+        extra: { ...authInfo.extra, demoLeaseToken: leaseHeader }
+      };
     } catch (error) {
       const status = Number.isInteger(error.statusCode) ? error.statusCode : 401;
       return sendJson(res, status, { error: 'unauthorized' });
@@ -80,6 +105,17 @@ export async function listenSafeOpsHttp(server, { host = '127.0.0.1', port = 300
       resolve(server.address());
     });
   });
+}
+
+async function readDemoBody(req) {
+  let body = '';
+  for await (const chunk of req) {
+    body += chunk;
+    if (body.length > 4096) throw new Error('Demo request too large');
+  }
+  const value = JSON.parse(body);
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid demo request');
+  return value;
 }
 
 function headerValue(value) {

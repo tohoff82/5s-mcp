@@ -12,7 +12,7 @@ import { WorkflowStore } from './workflow/store.js';
 import { WorkflowCoordinator } from './workflow/coordinator.js';
 import { createMcpElicitationApprovalProvider } from './approval/mcp-elicitation.js';
 
-export async function buildSafeOpsRuntime({ env = process.env, fetchImpl = globalThis.fetch } = {}) {
+export async function buildSafeOpsRuntime({ env = process.env, fetchImpl = globalThis.fetch, demoReplay = null } = {}) {
   const resource = requireUrl(env.SAFEOPS_RESOURCE_URI, 'SAFEOPS_RESOURCE_URI');
   const authorizationServer = requireUrl(env.SAFEOPS_AUTHORIZATION_SERVER, 'SAFEOPS_AUTHORIZATION_SERVER');
   const issuer = requireUrl(env.SAFEOPS_ISSUER || authorizationServer, 'SAFEOPS_ISSUER');
@@ -32,6 +32,7 @@ export async function buildSafeOpsRuntime({ env = process.env, fetchImpl = globa
   const scopesSupported = csv(env.SAFEOPS_SCOPES_SUPPORTED || 'mcp:service,mcp:tools,mcp:resources,safeops:read,safeops:apply');
   const resourceMetadata = buildProtectedResourceMetadata({ resource, authorizationServers: [authorizationServer], scopesSupported });
   const dependencies = {
+    demoReplay,
     targetRegistry,
     coordinator,
     store,
@@ -39,7 +40,7 @@ export async function buildSafeOpsRuntime({ env = process.env, fetchImpl = globa
     approvalProviderFactory: server => createMcpElicitationApprovalProvider({ server })
   };
   const requiredUserScope = env.SAFEOPS_USER_SCOPE || 'mcp:tools';
-  const httpServer = createSafeOpsHttpServer({ dependencies, tokenValidator, resourceMetadata, requiredUserScope });
+  const httpServer = createSafeOpsHttpServer({ dependencies, tokenValidator, resourceMetadata, requiredUserScope, demoReplay });
   return {
     httpServer,
     config: Object.freeze({ resource, authorizationServer, issuer, jwksUri, stateDir, requiredUserScope, scopesSupported })

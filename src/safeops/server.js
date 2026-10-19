@@ -11,6 +11,8 @@ export class SafeOpsMcpServer {
     this.server = new Server({ name: 'safeops-alexa-server', version: '0.1.0' }, { capabilities: { tools: {} } });
     this.tools = new Map();
     const resolvedDependencies = resolveDependencies(dependencies, this.server);
+    this.demoReplay = resolvedDependencies.demoReplay ?? null;
+    delete resolvedDependencies.demoReplay;
     this.registerTools(resolvedDependencies);
     this.setupHandlers();
   }
@@ -39,7 +41,8 @@ export class SafeOpsMcpServer {
     if (!tool) throw new McpError(ErrorCode.MethodNotFound, `Unknown SafeOps tool: ${request.params.name}`);
     const runtimeContext = await this.contextProvider(request, extra);
     try {
-      const result = await tool.execute(request.params.arguments || {}, runtimeContext);
+      const run = () => tool.execute(request.params.arguments || {}, runtimeContext);
+      const result = this.demoReplay ? await this.demoReplay.withToolCall(runtimeContext, run) : await run();
       return { content: [{ type: 'text', text: JSON.stringify(result) }], structuredContent: result };
     } catch (error) {
       console.error(`[SafeOps MCP] Tool failed: ${tool.name}`, error);

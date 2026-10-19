@@ -33,7 +33,11 @@ export class DemoMcpClient {
     client.setRequestHandler(ElicitRequestSchema, request => this.approvalCarrier.handleElicitation(request));
     const transport = this.transportFactory({
       resourceUri: this.resourceUri,
-      fetchImpl: (input, init) => this.oauthClient.authorizedFetch(this.session, input, init)
+      fetchImpl: (input, init = {}) => {
+        const headers = new Headers(init.headers || {});
+        if (this.session.replayLease) headers.set('x-safeops-demo-lease', this.session.replayLease);
+        return this.oauthClient.authorizedFetch(this.session, input, { ...init, headers });
+      }
     });
     await client.connect(transport);
     const tools = await client.listTools();
@@ -41,6 +45,40 @@ export class DemoMcpClient {
     this.client = client;
     this.transport = transport;
     return { tools: tools.tools.map(tool => tool.name).sort() };
+  }
+
+  async replayRequest(action, body) {
+    const url = new URL('/__safeops_demo/' + action, this.resourceUri);
+    const response = await this.oauthClient.authorizedFetch(this.session, url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      const error = new Error(result.message || 'Demo preparation failed');
+      error.status = response.status;
+      error.code = result.error;
+      throw error;
+    }
+    return result;
+  }
+
+  async prepare() {
+    const result = await this.replayRequest('prepare', { session_id: this.session.id });
+    if (result.fixture_ready !== true || typeof result.lease_token !== 'string') throw new Error('Fixture preparation was not verified');
+    this.session.replayLease = result.lease_token;
+    this.session.current = null;
+    return { fixture_ready: true, lease_expires_in_seconds: result.lease_expires_in_seconds };
+  }
+
+  async release() {
+    if (!this.session.replayLease) return { released: false };
+    const result = await this.replayRequest('release', {
+      session_id: this.session.id, lease_token: this.session.replayLease
+    });
+    if (result.released) this.session.replayLease = null;
+    return result;
   }
 
   async inspect({ targetId }) {
