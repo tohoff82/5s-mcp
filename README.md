@@ -15,6 +15,24 @@ Current source-backed surface: 12 tools in 1 ordered registry, 1 stdio entrypoin
 
 The Amazon Alexa+ hackathon branch adds a **separate** SafeOps surface without changing that legacy registry: 3 workflow tools over authenticated Streamable HTTP (`safeops_inspect_workspace`, `safeops_apply_safe_actions`, `safeops_explain_workflow`), explicit actor-to-target binding, bounded SAFE-only approval, append-oriented workflow evidence, real controlled effects, post-effect verification, and evidence-backed explanation. The hackathon demo uses a participant-built interaction surface because the Alexa+ participant Toolkit / hosted simulator was not available in our participant path; only that interaction carrier is substituted. Authentication, MCP transport, SafeOps classification, policy enforcement, controlled execution, verification, and explanation are live behind it. This is hackathon/demo evidence, not a claim of Amazon-hosted UI, production promotion, or mainline adoption.
 
+## Judge quickstart — 5S SafeOps (Alexa+ track)
+
+**Live participant-built demo:** https://safeops-b3-r1-demo-production.up.railway.app/
+
+**Submission evidence:** [Hackathon overview](docs/hackathon/SUBMISSION.md) · [Verification](docs/hackathon/TESTING.md) · [Product feedback](docs/hackathon/PRODUCT-FEEDBACK.md)
+
+**Access:** The interactive path uses a laboratory OAuth login. The login username and password are **not published in this repository**; obtain judge testing credentials through the Devpost submission's testing instructions. Do not use OAuth client secrets as login credentials. Availability of those instructions and a separate judge account must be checked before judging; this README does not claim that access is already provisioned.
+
+1. Open the demo and select **Connect user**, then complete OAuth login and consent.
+2. Select **Inspect workspace**. Review SAFE / REVIEW / DENIED candidates and confirm **EFFECT NONE** before approval.
+3. Select **Apply safe only** to authorize the bounded SAFE subset, not REVIEW or DENIED.
+4. Check the verification result, then select **Explain decision** to see what changed and what remained untouched.
+5. Expand **Technical receipt** for additional protocol and workflow evidence.
+
+**Repeatability limitation:** The live demo operates on a shared controlled fixture. A SAFE apply changes that fixture; a fresh browser session alone does not restore it. A subsequent evaluator may see different candidate counts until the controlled fixture is safely rematerialized. Do not assume independent judge runs or automatic reset have been verified.
+
+**Representation:** The UI is a participant-built Alexa+ interaction substitute, **not** an Amazon-hosted Alexa+ simulator or native Alexa+ runtime. The authenticated MCP backend, bounded policy/effect, verification, and explanation are separately implemented and evidenced.
+
 Judge-facing hackathon material:
 - [Submission overview](docs/hackathon/SUBMISSION.md)
 - [Testing and verification](docs/hackathon/TESTING.md)
