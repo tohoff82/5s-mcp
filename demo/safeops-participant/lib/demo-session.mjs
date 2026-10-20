@@ -16,6 +16,7 @@ export class DemoSessionStore {
       mcp: null,
       mcp_stale: false,
       replayLease: null,
+      pendingDemoPrepare: null,
       current: null
     };
     this.sessions.set(id, session);
@@ -41,6 +42,7 @@ export class DemoSessionStore {
       session.mcp = null;
       session.mcp_stale = false;
       session.replayLease = null;
+      session.pendingDemoPrepare = null;
       session.current = null;
     }
     this.sessions.delete(id);

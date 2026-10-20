@@ -79,8 +79,20 @@ export function createDemoServer({
       }
       if (req.method === 'POST' && url.pathname === '/api/prepare') {
         requireMcp(session);
-        const prepared = await session.mcp.prepare();
-        return sendJson(res, 200, prepared);
+        if (session.pendingDemoPrepare) {
+          return sendJson(res, 409, {
+            error: 'demo_prepare_in_progress',
+            message: 'Workspace preparation is already running in this session.'
+          });
+        }
+        const pending = session.mcp.prepare();
+        session.pendingDemoPrepare = pending;
+        try {
+          const prepared = await pending;
+          return sendJson(res, 200, prepared);
+        } finally {
+          if (session.pendingDemoPrepare === pending) session.pendingDemoPrepare = null;
+        }
       }
       if (req.method === 'POST' && url.pathname === '/api/inspect') {
         requireMcp(session);
@@ -112,7 +124,29 @@ export function createDemoServer({
         return sendJson(res, 200, await session.mcp.explain());
       }
       if (req.method === 'POST' && url.pathname === '/api/logout') {
-        if (session.mcp && session.replayLease) await session.mcp.release().catch(() => {});
+        // A browser can leave while the previous Prepare HTTP response is
+        // still pending. Do not release its superseded lease token.
+        if (session.pendingDemoPrepare) {
+          await session.pendingDemoPrepare.catch(() => {});
+        }
+        if (session.mcp && session.replayLease) {
+          try {
+            const release = await session.mcp.release();
+            if (release?.released !== true) throw new Error('release not acknowledged');
+          } catch (error) {
+            const code = typeof error?.code === 'string' && /^[a-z0-9_]+$/.test(error.code)
+              ? error.code : 'unknown';
+            console.error('[SafeOps Participant Demo] lease release failed', {
+              code, status: Number.isInteger(error?.status) ? error.status : null
+            });
+            // Preserve the authenticated session/lease so a retry can succeed.
+            // Never report successful logout while the backend still owns it.
+            return sendJson(res, 409, {
+              error: 'demo_release_incomplete',
+              message: 'Demo workspace is still reserved. Please retry Log out.'
+            });
+          }
+        }
         await sessionStore.destroy(session.id);
         clearSessionCookie(res, config);
         return sendJson(res, 200, { logged_out: true });
