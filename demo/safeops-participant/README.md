@@ -1,6 +1,6 @@
 # SafeOps Participant Demo Surface
 
-Status: **B3-R1 live hackathon demo / judge-facing branch**
+Status: **B3-R2-R1 guided replay live / Architect accepted / judge-facing hackathon branch** (20 Oct 2026; demo source pinned to `1422bd29617a26e87b46ebaf7dae662de3fe18e1`)
 
 This directory contains the thin participant-built interaction carrier used for the Amazon Alexa+ hackathon demonstration.
 
@@ -87,19 +87,25 @@ node --check scripts/safeops-c0-start.mjs
 
 See [hackathon testing evidence](../../docs/hackathon/TESTING.md) for the distinction between repository tests and the controlled live proof.
 
-## Current live proof
+## Current B3-R2-R1 live proof
 
-The controlled hackathon path exercised real user OAuth, MCP initialize / tools-list, inspect, bounded SAFE-only approval, effect, verification, and explanation against the live backend.
+The participant-built interface performs a real user OAuth login, MCP initialize / `tools/list`, inspect, bounded SAFE-only approval, controlled effect, verification, explanation, and a fresh-sample replay.
 
 ```text
-Inspect
-  -> plan: SAFE 1 / REVIEW 1 / DENIED 1 / EFFECT NONE
-  -> Apply only the safe actions
-  -> VERIFIED_SUCCESS for the SAFE effect
-  -> Explain the same governed workflow
+Connect user (OAuth and consent)
+  -> Start guided demo (authenticated bounded fixture Prepare + Inspect)
+  -> SAFE 1 / REVIEW 1 / DENIED 1 / EFFECT NONE
+  -> Apply safe only (single-use, workflow-bound approval)
+  -> one eligible SAFE effect; VERIFIED_SUCCESS
+  -> Explain decision (REVIEW and DENIED untouched)
+  -> Run again with fresh sample (new workflow)
+  -> repeat Apply / Verify / Explain
+  -> Log out of demo (authenticated lease Release)
 ```
 
-The plan snapshot is not a claim that the filesystem remains unchanged after Apply. Verification and explanation refer to the effectful workflow state.
+On 20 Oct 2026, an operator-run browser acceptance harness completed two independent OAuth/browser contexts and three verified SAFE-only effects, including a fresh workflow replay. The backend separately recorded two successful `/__safeops_demo/release` HTTP 200 results. [Testing details](../../docs/hackathon/TESTING.md) and [sanitized receipt](../../docs/hackathon/B3-R2-R1-LIVE-ACCEPTANCE.json) separate live HTTP evidence from effect-verification assertions.
+
+The plan snapshot does not imply no later effect: `EFFECT NONE` is the *pre-approval* state. `VERIFIED_SUCCESS` is reported only after a separately checked controlled effect.
 
 ## Non-goals and boundaries
 
@@ -113,6 +119,8 @@ The participant UI represents the Alexa+ conversation/orchestration side for thi
 
 See the [submission overview](../../docs/hackathon/SUBMISSION.md), [product feedback](../../docs/hackathon/PRODUCT-FEEDBACK.md), and [friction log](../../docs/hackathon/FRICTION-LOG.md).
 
-## Guided Demo Replay B3-R2 (candidate / not live)
+## Guided Demo Replay B3-R2-R1 (live and tested)
 
-The separate B3-R2 branch proposes authenticated fixture preparation and replay through an exclusive backend lease. This feature is **not deployed** as part of the currently hosted B3-R1 demo. [Implementation and safety contract](DEMO-REPLAY-B3-R2.md).
+The deployed demo offers `Start guided demo` and `Run again with fresh sample`. Backend-only preparation is restricted to the exact C0 fixture, with a single authenticated session lease. Replay uses a fresh workflow ID; it never authorizes REVIEW or DENIED actions.
+
+The B3-R2-R1 lease-lifecycle fix serializes logout against any in-flight preparation, rejects simultaneous preparation in the same session, and refuses to claim successful logout when the backend did not confirm Release. It does not add an MCP tool or relax SafeOps policy. [Implementation and safety contract](DEMO-REPLAY-B3-R2.md).

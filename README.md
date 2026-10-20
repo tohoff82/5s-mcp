@@ -19,23 +19,27 @@ The Amazon Alexa+ hackathon branch adds a **separate** SafeOps surface without c
 
 **Live participant-built demo:** https://safeops-b3-r1-demo-production.up.railway.app/
 
-**Submission evidence:** [Hackathon overview](docs/hackathon/SUBMISSION.md) · [Verification](docs/hackathon/TESTING.md) · [Product feedback](docs/hackathon/PRODUCT-FEEDBACK.md)
+**Submission evidence:** [Hackathon overview](docs/hackathon/SUBMISSION.md) · [Verification](docs/hackathon/TESTING.md) · [Sanitized B3-R2-R1 live receipt](docs/hackathon/B3-R2-R1-LIVE-ACCEPTANCE.json) · [Product feedback](docs/hackathon/PRODUCT-FEEDBACK.md) · [Friction log](docs/hackathon/FRICTION-LOG.md)
 
 **Access:** The interactive path uses a laboratory OAuth login. The login username and password are **not published in this repository**; obtain judge testing credentials through the Devpost submission's testing instructions. Do not use OAuth client secrets as login credentials. Availability of those instructions and a separate judge account must be checked before judging; this README does not claim that access is already provisioned.
 
-1. Open the demo and select **Connect user**, then complete OAuth login and consent.
-2. Select **Inspect workspace**. Review SAFE / REVIEW / DENIED candidates and confirm **EFFECT NONE** before approval.
-3. Select **Apply safe only** to authorize the bounded SAFE subset, not REVIEW or DENIED.
-4. Check the verification result, then select **Explain decision** to see what changed and what remained untouched.
-5. Expand **Technical receipt** for additional protocol and workflow evidence.
+1. Open the live demo and select **Connect user**. Complete the user OAuth login and consent. Judge login credentials must be provided separately through a suitable **private** testing-instructions field; do not publish them in GitHub.
+2. Select **Start guided demo**. This prepares the allowlisted sample and automatically performs Inspect; do not start with a separate Inspect call.
+3. Confirm **SAFE 1 / REVIEW 1 / DENIED 1** and **EFFECT NONE** *before* approval.
+4. Select **Apply safe only** (the command means “Apply only the safe actions”). Confirm `VERIFIED_SUCCESS` in the technical receipt; REVIEW and DENIED must remain outside the actual execution scope.
+5. Select **Explain decision** for what changed and why the other actions remained untouched.
+6. Optionally select **Run again with fresh sample**, verify a new workflow, and repeat steps 3–5. Select **Log out of demo** to release the active sample lease.
 
-**Live deployment limitation:** The currently hosted B3-R1 / C0 demo uses a shared fixture. A SAFE apply changes that fixture; starting a new browser session does not reset it. The **B3-R2 guided replay implementation is an un-deployed candidate**, not a claim that the live service already supports the Start / Run again path. See [B3-R2 replay contract and local test scope](demo/safeops-participant/DEMO-REPLAY-B3-R2.md).
+**Current live evidence (20 Oct 2026):** B3-R2-R1 is deployed and live-verified with two independent browser OAuth sessions, three end-to-end SAFE-only verified workflows (including one guided replay), and two successful backend lease releases. The demo service is pinned to `1422bd29617a26e87b46ebaf7dae662de3fe18e1`; the MCP backend and OAuth service retain their separately pinned, unchanged sources. [View sanitized acceptance receipt](docs/hackathon/B3-R2-R1-LIVE-ACCEPTANCE.json).
+
+**Replay limits:** This is a single shared, marker-bound C0 demo fixture, not an unrestricted workspace or rollback system. Only one unexpired judge lease can be active; a concurrent visitor receives a bounded conflict, and inactive leases expire after 10 minutes. Logout explicitly releases the current lease, or returns an error rather than falsely reporting successful release.
 
 **Representation:** The UI is a participant-built Alexa+ interaction substitute, **not** an Amazon-hosted Alexa+ simulator or native Alexa+ runtime. The authenticated MCP backend, bounded policy/effect, verification, and explanation are separately implemented and evidenced.
 
 Judge-facing hackathon material:
 - [Submission overview](docs/hackathon/SUBMISSION.md)
 - [Testing and verification](docs/hackathon/TESTING.md)
+- [Sanitized B3-R2-R1 live acceptance receipt](docs/hackathon/B3-R2-R1-LIVE-ACCEPTANCE.json)
 - [Product feedback](docs/hackathon/PRODUCT-FEEDBACK.md)
 - [Friction log](docs/hackathon/FRICTION-LOG.md)
 

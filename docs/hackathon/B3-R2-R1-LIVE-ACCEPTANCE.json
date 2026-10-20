@@ -1,0 +1,98 @@
+{
+  "schema": "safeops.hackathon.live-acceptance.v1",
+  "result": "LIVE_2_BROWSER_PASS",
+  "tested_at_utc": "2026-10-20T00:52:47.254Z",
+  "scope": "bounded C0 judge demonstration fixture only",
+  "environment": "public demo UI with participant-built Alexa+ interaction carrier; authenticated self-hosted Streamable HTTP MCP backend",
+  "source_binding": {
+    "demo_source_commit": "1422bd29617a26e87b46ebaf7dae662de3fe18e1",
+    "demo_railway_deployment": "b902a1c9-2ec1-4e42-9b64-5ff9e88726d0",
+    "mcp_source_commit": "fda23aed8689ad310486c48f7a77f50b0c0c0551",
+    "mcp_railway_deployment": "a0f3d9be-ddb0-47e3-9ee2-64348e94d377",
+    "oauth_source_commit": "aac34a7eecad2e0c3e4622a219ab269d94844b94",
+    "oauth_railway_deployment": "dfdd1d02-5a91-411c-91ef-3068b34cccff"
+  },
+  "operator_run_browser_harness": {
+    "result": "LIVE_2_BROWSER_PASS",
+    "independent_browser_contexts": 2,
+    "stages_passed": [
+      "BROWSER_1_OAUTH",
+      "BROWSER_1_PREPARE_INSPECT",
+      "BROWSER_1_APPLY_VERIFY_EXPLAIN",
+      "BROWSER_1_REPLAY_PREPARE_INSPECT",
+      "BROWSER_1_REPLAY_APPLY_VERIFY_EXPLAIN",
+      "BROWSER_1_LOGOUT",
+      "BROWSER_2_OAUTH",
+      "BROWSER_2_PREPARE_INSPECT",
+      "BROWSER_2_APPLY_VERIFY_EXPLAIN",
+      "BROWSER_2_LOGOUT"
+    ],
+    "browser_1": {
+      "browser": 1,
+      "oauth": "PASS",
+      "inspect": "SAFE=1 REVIEW=1 DENIED=1",
+      "apply": "VERIFIED_SUCCESS",
+      "explain": "PASS",
+      "replayed": true,
+      "logout": "PASS"
+    },
+    "browser_2": {
+      "browser": 2,
+      "oauth": "PASS",
+      "inspect": "SAFE=1 REVIEW=1 DENIED=1",
+      "apply": "VERIFIED_SUCCESS",
+      "explain": "PASS",
+      "replayed": false,
+      "logout": "PASS"
+    },
+    "inspected_workflows": 3,
+    "distinct_workflow_on_replay": true,
+    "approved_safe_effects_with_verification_success": 3,
+    "scope_assertion": "In each effectful workflow, the executed operation was in approved and SAFE sets and outside REVIEW/DENIED; both Apply and Explain reported VERIFIED_SUCCESS."
+  },
+  "observed_demo_http_status_200_counts": {
+    "prepare": 3,
+    "inspect": 3,
+    "approval": 3,
+    "apply": 3,
+    "explain": 3,
+    "logout_including_best_effort_cleanup": 4
+  },
+  "railway_http_correlation": {
+    "time_window_utc": "2026-10-20T00:51:49Z/2026-10-20T00:52:47Z",
+    "backend_control_prepares_http_200": 3,
+    "backend_control_releases_http_200": 2,
+    "backend_control_releases_http_403": 0,
+    "demo_prepares_http_409": 0,
+    "oauth_token_exchanges_http_200": 2,
+    "correlation_type": "Railway HTTP event readback; aggregates, not signed raw logs"
+  },
+  "local_preflight": {
+    "npm_test": {
+      "passed": 127,
+      "failed": 0
+    },
+    "lease_lifecycle_regressions": {
+      "passed": 3,
+      "failed": 0
+    },
+    "npm_run_check": "PASS",
+    "npm_run_docs_links": "PASS",
+    "npm_run_docs_verify": "PASS"
+  },
+  "redaction": {
+    "credentials_included": false,
+    "access_or_refresh_tokens_included": false,
+    "cookies_or_session_ids_included": false,
+    "workspace_paths_beyond_declared_fixture_included": false,
+    "raw_unredacted_logs_included": false
+  },
+  "limits": [
+    "Operator-run browser test with privately supplied lab OAuth password, not an independent third-party attestation.",
+    "HTTP 200 alone does not prove the controlled filesystem effect; verification assertions were checked separately in browser receipt.",
+    "Real backend and demo interaction carrier, not a native Amazon-hosted Alexa+ simulator/Toolkit execution.",
+    "Single-replica and shared-fixture demo lease, not a distributed production reservation service.",
+    "Not production/customer readiness, general host-security certification, or proof that judge credentials are provisioned.",
+    "No legal/eligibility or participant-original-authorship attestation is made."
+  ]
+}
